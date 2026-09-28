@@ -1,0 +1,676 @@
+{% extends "base.html" %}
+
+{% block title %}ثبت اطلاعات - سیستم جامع گزارش گیری{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row g-4">
+        <!-- ستون راست: منابع اشغال شده -->
+        <div class="col-lg-4 order-lg-2">
+          <div class="checklist-sidebar-sticky">
+            <div class="card card-info shadow">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="fas fa-tasks me-2"></i>منابع اشغال شده</h6>
+                    <button class="btn btn-sm btn-light" onclick="updateResourceStatus()" title="بروزرسانی">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="text-secondary mb-0">
+                                <i class="fas fa-wifi me-1"></i>روش‌های ارتباطی اشغال
+                            </h6>
+                            <div>
+                                <span class="badge bg-danger me-1">فعال</span>
+                                <span class="badge bg-warning">رزرو آینده</span>
+                            </div>
+                        </div>
+                        <div id="via-methods-status" class="d-flex flex-wrap gap-1">
+                            <span class="text-muted small">در حال بارگذاری...</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="text-secondary mb-0">
+                                <i class="fas fa-broadcast-tower me-1"></i>خطوط ارسالی اشغال
+                            </h6>
+                            <div>
+                                <span class="badge bg-danger me-1">فعال</span>
+                                <span class="badge bg-warning">رزرو آینده</span>
+                            </div>
+                        </div>
+                        <div id="transmission-lines-status" class="d-flex flex-wrap gap-1">
+                            <span class="text-muted small">در حال بارگذاری...</span>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-2 border-top">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <span class="badge bg-danger me-1">قرمز</span>: منابع در حال استفاده فعلی
+                            <span class="badge bg-warning me-1">زرد</span>: منابع رزرو شده برای آینده
+                            <br>
+                            برای مشاهده جزئیات روی هر منبع کلیک کنید
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% include '_shift_checklist.html' %}
+          </div>
+        </div>
+
+        <!-- ستون چپ: فرم اصلی -->
+        <div class="col-lg-8 order-lg-1">
+            <div class="card shadow h-100">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="fas fa-plus-circle me-2"></i> ثبت اطلاعات جدید</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('main.submit') }}" id="shiftForm" novalidate>
+                        <input type="hidden" name="submission_token" value="{{ submission_token }}">
+                        <!-- ردیف 1 -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">تاریخ</label>
+                                <input type="text" class="form-control" id="date" name="date" value="{{ today }}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">فعالیت</label>
+                                <select class="form-select" id="activity" name="activity" required>
+                                    <option value="" selected disabled>انتخاب کنید...</option>
+                                    {% for activity in activities %}
+                                    <option value="{{ activity }}">{{ activity }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">شیفت</label>
+                                <select class="form-select" id="shift" name="shift" required>
+                                    <option value="" selected disabled>انتخاب کنید...</option>
+                                    {% for shift in shifts %}
+                                    <option value="{{ shift }}">{{ shift }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- ردیف 2 -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">نام شبکه</label>
+                                <select class="form-select" id="network_name" name="network_name">
+                                    <option value="" selected disabled>انتخاب کنید...</option>
+                                    {% for network in network_names %}
+                                    <option value="{{ network }}">{{ network }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">لوکیشن</label>
+                                <input type="text" class="form-control" id="location" name="location" placeholder="مثال: استودیو ۱">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">تحویل‌دهنده</label>
+                                <input type="text" class="form-control" id="deliverer" name="deliverer">
+                            </div>
+                        </div>
+
+                        <!-- ردیف 3 -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">تحویل‌گیرنده</label>
+                                <select class="form-select" id="receiver" name="receiver">
+                                    <option value="" selected disabled>انتخاب کنید...</option>
+                                    {% for person in staff %}
+                                    <option value="{{ person }}">{{ person }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">از طریق</label>
+                                <select class="form-select" id="via_method" name="via_method">
+                                    <option value="" selected disabled>انتخاب کنید...</option>
+                                    {% for method in via_methods %}
+                                    <option value="{{ method }}">{{ method }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">خط ارسالی</label>
+                                <select class="form-select" id="transmission_line" name="transmission_line">
+                                    <option value="" selected disabled>انتخاب کنید...</option>
+                                    {% for line in transmission_lines %}
+                                    <option value="{{ line }}">{{ line }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- ردیف 4 -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">ساعت دریافت سیگنال</label>
+                                <input type="text" class="form-control time-input" id="signal_time" name="signal_time" placeholder="HH:MM:SS" maxlength="8">
+                                <div id="signal_time_error" class="text-danger mt-1 small"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">ساعت شروع</label>
+                                <input type="text" class="form-control time-input" id="start_time" name="start_time" placeholder="HH:MM:SS" maxlength="8">
+                                <div id="start_time_error" class="text-danger mt-1 small"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">ساعت پایان</label>
+                                <input type="text" class="form-control time-input" id="end_time" name="end_time" placeholder="HH:MM:SS" maxlength="8">
+                                <div id="end_time_error" class="text-danger mt-1 small"></div>
+                            </div>
+                        </div>
+
+                        <!-- ردیف جدید برای نمایش خطای توالی زمان -->
+                        <div class="row g-3 mb-3" id="time_sequence_error_row" style="display: none;">
+                            <div class="col-12">
+                                <div class="alert alert-warning py-2" role="alert">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <span id="time_sequence_error_text"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle"></i> فرمت زمان: ساعت:دقیقه:ثانیه (HH:MM:SS)
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- ردیف 5: پرسنل شیفت (الزامی) - طرح کارتی -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-12">
+                                <label class="form-label">پرسنل شیفت <span class="text-danger">*</span></label>
+                                <div id="shift_staff_error" class="text-danger mb-2 small" style="display: none;">
+                                    لطفاً حداقل یک نفر از پرسنل شیفت را انتخاب کنید.
+                                </div>
+                                <div class="row g-1" id="shift_staff_container">
+                                    {% for person in staff %}
+                                    <div class="col-xl-2 col-lg-2 col-md-4 col-sm-4 col-6 mb-2">
+                                        <div class="staff-card">
+                                            <input class="form-check-input staff-checkbox" type="checkbox" value="{{ person }}" id="staff_{{ loop.index }}" name="shift_staff">
+                                            <label class="staff-label w-100" for="staff_{{ loop.index }}">
+                                                <div class="staff-avatar">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                                <div class="staff-name">{{ person }}</div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ردیف 6 -->
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">توضیحات</label>
+                                <textarea class="form-control" id="description" name="description" rows="2" placeholder="توضیحات بیشتر..."></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">پیام برای ادمین</label>
+                                <textarea class="form-control" id="comments" name="comments" rows="2" placeholder="پیام برای ادمین..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- دکمه‌ها -->
+                        <div class="d-flex justify-content-center gap-2 mt-4">
+                            <button type="submit" class="btn btn-success" id="submitButton">
+                                <span id="submitButtonReady"><i class="fas fa-save me-2"></i> ثبت اطلاعات</span>
+                                <span id="submitButtonLoading" class="d-none">
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                    در حال ثبت، لطفاً صبر کنید...
+                                </span>
+                            </button>
+                            <button type="button" class="btn btn-info" onclick="copyLastReport()">
+                                <i class="fas fa-copy me-2"></i> کپی از گزارش قبلی
+                            </button>
+                            <button type="button" class="btn btn-warning" onclick="copyLastMonitorReport()">
+                                <i class="fas fa-exclamation-triangle me-2"></i> کپی از آخرین آلارم
+                            </button>
+                            <a href="{{ url_for('main.form') }}" class="btn btn-secondary">
+                                <i class="fas fa-redo me-2"></i> پاک کردن فرم
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/shift_checklist.js', v='5') }}"></script>
+<script>
+// --- توابع کمکی ---
+
+function formatTimeInput(input) {
+    let cursorPos = input.selectionStart;
+    let originalValue = input.value;
+    let value = originalValue.replace(/\D/g, '');
+    if (value.length > 2) { value = value.slice(0, 2) + ':' + value.slice(2); }
+    if (value.length > 5) { value = value.slice(0, 5) + ':' + value.slice(5); }
+    value = value.slice(0, 8);
+    input.value = value;
+    let lengthDiff = value.length - originalValue.length;
+    let newCursorPos = cursorPos + lengthDiff;
+    newCursorPos = Math.max(0, Math.min(newCursorPos, value.length));
+    input.setSelectionRange(newCursorPos, newCursorPos);
+}
+
+function validateTime(inputId, errorId) {
+    const input = document.getElementById(inputId);
+    const errorDiv = document.getElementById(errorId);
+    let value = input.value.trim();
+    if (value === '') { errorDiv.textContent = ''; return true; }
+    if (/^\d{2}:\d{2}$/.test(value)) { value += ':00'; input.value = value; }
+    const timeRegex = /^([01]?[0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])$/;
+    if (!timeRegex.test(value)) {
+        errorDiv.textContent = 'فرمت زمان نامعتبر است. (مثال: 14:30:00)';
+        input.value = ''; return false;
+    }
+    errorDiv.textContent = ''; return true;
+}
+
+function timeToSeconds(timeStr) {
+    if (!timeStr) return null;
+    try {
+        const parts = timeStr.split(':');
+        if (parts.length === 2) { parts.push('00'); }
+        const [h, m, s] = parts.map(Number);
+        if (isNaN(h) || isNaN(m) || isNaN(s)) return null;
+        return h * 3600 + m * 60 + s;
+    } catch (e) {
+        return null;
+    }
+}
+
+function validateTimeSequence() {
+    const signalTimeEl = document.getElementById('signal_time');
+    const startTimeEl = document.getElementById('start_time');
+    const endTimeEl = document.getElementById('end_time');
+    const errorRowEl = document.getElementById('time_sequence_error_row');
+    const errorTextEl = document.getElementById('time_sequence_error_text');
+
+    const signalSeconds = timeToSeconds(signalTimeEl.value);
+    const startSeconds = timeToSeconds(startTimeEl.value);
+    const endSeconds = timeToSeconds(endTimeEl.value);
+
+    errorRowEl.style.display = 'none';
+    signalTimeEl.classList.remove('is-invalid');
+    startTimeEl.classList.remove('is-invalid');
+    endTimeEl.classList.remove('is-invalid');
+
+    let isValid = true;
+    let errorMessage = '';
+
+    if (signalSeconds !== null && startSeconds !== null && signalSeconds > startSeconds) {
+        isValid = false;
+        errorMessage = 'خطا: ساعت دریافت سیگنال نباید از ساعت شروع بزرگتر باشد.';
+        signalTimeEl.classList.add('is-invalid');
+        startTimeEl.classList.add('is-invalid');
+    }
+
+    if (startSeconds !== null && endSeconds !== null && startSeconds >= endSeconds) {
+        isValid = false;
+        if (errorMessage) { errorMessage += ' '; }
+        errorMessage += 'ساعت پایان باید از ساعت شروع بزرگتر باشد.';
+        startTimeEl.classList.add('is-invalid');
+        endTimeEl.classList.add('is-invalid');
+    }
+
+    if (!isValid) {
+        errorTextEl.textContent = errorMessage;
+        errorRowEl.style.display = 'block';
+    }
+    return isValid;
+}
+
+function validateShiftStaff() {
+    const checkboxes = document.querySelectorAll('input[name="shift_staff"]:checked');
+    const errorDiv = document.getElementById('shift_staff_error');
+    const container = document.getElementById('shift_staff_container');
+    if (checkboxes.length === 0) {
+        errorDiv.style.display = 'block';
+        container.parentElement.classList.add('staff-error');
+        return false;
+    } else {
+        errorDiv.style.display = 'none';
+        container.parentElement.classList.remove('staff-error');
+        return true;
+    }
+}
+
+function createBadge(resourceName, resourceInfo, container) {
+    const badge = document.createElement('span');
+    badge.style.cursor = 'pointer';
+    badge.textContent = resourceName;
+    badge.setAttribute('data-resource-name', resourceName);
+    
+    if (resourceInfo.status === 'busy') {
+        badge.className = 'badge bg-danger me-1 mb-1 position-relative';
+    } else if (resourceInfo.status === 'future') {
+        badge.className = 'badge bg-warning text-dark me-1 mb-1 position-relative';
+    } else {
+        return;
+    }
+    
+    // <<< شروع بخش تغییر یافته >>>
+    if (resourceInfo.conflict) {
+        badge.classList.add('badge-conflict-glow'); // استفاده از کلاس درخشش
+        badge.title = `⚠️ هشدار تداخل زمانی! برای دیدن جزئیات کلیک کنید.`;
+    }
+    // <<< پایان بخش تغییر یافته >>>
+    
+    badge.title = resourceInfo.message || 'برای دیدن جزئیات کلیک کنید.';
+    badge.addEventListener('click', () => showResourceDetails(resourceName, resourceInfo));
+    container.appendChild(badge);
+}
+
+function createResourceModal() {
+    let modalElement = document.getElementById('resourceDetailsModal');
+    if (modalElement) return modalElement;
+    
+    modalElement = document.createElement('div');
+    modalElement.className = 'modal fade';
+    modalElement.id = 'resourceDetailsModal';
+    modalElement.setAttribute('tabindex', '-1');
+    modalElement.setAttribute('aria-hidden', 'true');
+    modalElement.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">جزئیات منبع</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>نام منبع:</strong> <span id="resourceDetailName" class="text-primary"></span></p>
+                    <hr>
+                    <h6>شبکه‌های مرتبط:</h6>
+                    <ul id="resourceConflictsList" class="list-group list-group-flush"></ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modalElement);
+    return modalElement;
+}
+
+function showResourceDetails(resourceName, resourceInfo) {
+    if (typeof bootstrap === 'undefined') {
+        alert("خطا: کتابخانه بوت‌استرپ به درستی بارگذاری نشده است.");
+        return;
+    }
+    const modalElement = createResourceModal();
+    const modalInstance = new bootstrap.Modal(modalElement);
+    const modalTitle = modalElement.querySelector('.modal-title');
+    const conflictsList = document.getElementById('resourceConflictsList');
+
+    document.getElementById('resourceDetailName').textContent = resourceName;
+    conflictsList.innerHTML = '';
+    
+    let recordsToShow = [];
+    if (resourceInfo.status === 'busy' && resourceInfo.conflicts) {
+        recordsToShow = resourceInfo.conflicts;
+        modalTitle.textContent = 'جزئیات منبع اشغال شده';
+    } else if (resourceInfo.status === 'future' && resourceInfo.future_records) {
+        recordsToShow = resourceInfo.future_records;
+        modalTitle.textContent = 'جزئیات منبع رزرو شده';
+    }
+
+    if (recordsToShow.length > 0) {
+        recordsToShow.forEach(record => {
+            const listItem = document.createElement('li');
+            listItem.className = 'list-group-item';
+            if (resourceInfo.status === 'future') listItem.classList.add('list-group-item-warning');
+            
+            listItem.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-tv text-info me-2"></i>
+                        <strong>${record.network || 'نامشخص'}</strong>
+                        <span class="badge bg-light text-dark ms-2">${record.activity || 'نامشخص'}</span>
+                        ${resourceInfo.status === 'future' ? '<span class="badge bg-warning text-dark ms-2">رزرو آینده</span>' : ''}
+                    </div>
+                    <span class="badge bg-primary rounded-pill">
+                        <i class="fas fa-clock me-1"></i>${record.start_time || 'نامشخص'} تا ${record.end_time || 'نامشخص'}
+                    </span>
+                </div>
+            `;
+            conflictsList.appendChild(listItem);
+        });
+    } else {
+        conflictsList.innerHTML = '<li class="list-group-item text-muted">هیچ جزئیاتی یافت نشد.</li>';
+    }
+    modalInstance.show();
+}
+
+function copyLastReport() {
+    fetch("{{ url_for('main.api_last_record') }}")
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'no_records') { alert('هیچ گزارش قبلی برای کپی کردن وجود ندارد.'); return; }
+            document.getElementById('date').value = data.date || '';
+            document.getElementById('shift').value = data.shift || '';
+            document.getElementById('activity').value = data.activity || '';
+            document.getElementById('location').value = data.location || '';
+            document.getElementById('network_name').value = data.network_name || '';
+            document.getElementById('deliverer').value = data.deliverer || '';
+            document.getElementById('receiver').value = data.receiver || '';
+            document.getElementById('signal_time').value = data.signal_time || '';
+            document.getElementById('start_time').value = data.start_time || '';
+            document.getElementById('end_time').value = data.end_time || '';
+            document.getElementById('comments').value = data.comments || '';
+            document.getElementById('via_method').value = '';
+            document.getElementById('transmission_line').value = '';
+            document.getElementById('description').value = '';
+            
+            const staffToSelect = data.shift_staff ? data.shift_staff.split(', ') : [];
+            const checkboxes = document.querySelectorAll('input[name="shift_staff"]');
+            checkboxes.forEach(checkbox => { checkbox.checked = staffToSelect.includes(checkbox.value); });
+            
+            validateShiftStaff();
+            document.getElementById('activity').dispatchEvent(new Event('change'));
+            
+            alert('گزارش قبلی با موفقیت در فرم کپی شد.');
+        })
+        .catch(error => { console.error('Error fetching last record:', error); alert('خطا در دریافت گزارش قبلی.'); });
+}
+
+function copyLastMonitorReport() {
+    fetch("{{ url_for('main.api_last_monitor_report') }}")
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'no_records') { alert('هیچ آلارم قبلی برای کپی کردن وجود ندارد.'); return; }
+            document.getElementById('date').value = data.date || '';
+            document.getElementById('shift').value = data.shift || '';
+            document.getElementById('activity').value = data.activity || '';
+            document.getElementById('location').value = data.location || '';
+            document.getElementById('network_name').value = data.network_name || '';
+            document.getElementById('deliverer').value = data.deliverer || '';
+            document.getElementById('receiver').value = data.receiver || '';
+            document.getElementById('signal_time').value = data.signal_time || '';
+            document.getElementById('start_time').value = data.start_time || '';
+            document.getElementById('end_time').value = data.end_time || '';
+            document.getElementById('comments').value = data.comments || '';
+            document.getElementById('via_method').value = data.via_method || '';
+            document.getElementById('transmission_line').value = data.transmission_line || '';
+            document.getElementById('description').value = data.description || '';
+            
+            const staffToSelect = data.shift_staff ? data.shift_staff.split(', ') : [];
+            const checkboxes = document.querySelectorAll('input[name="shift_staff"]');
+            checkboxes.forEach(checkbox => { checkbox.checked = staffToSelect.includes(checkbox.value); });
+            
+            validateShiftStaff();
+            document.getElementById('activity').dispatchEvent(new Event('change'));
+            
+            alert('آخرین آلارم با موفقیت در فرم کپی شد. لطفاً اطلاعات تکمیلی را وارد کنید.');
+        })
+        .catch(error => { console.error('Error fetching last monitor report:', error); alert('خطا در دریافت آخرین آلارم.'); });
+}
+
+function updateResourceStatus() {
+    fetch("{{ url_for('main.api_resource_status') }}")
+        .then(response => {
+            if (!response.ok) throw new Error(`خطای HTTP: ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            const methodsContainer = document.getElementById('via-methods-status');
+            const linesContainer = document.getElementById('transmission-lines-status');
+            methodsContainer.innerHTML = '';
+            linesContainer.innerHTML = '';
+
+            for (const [methodName, methodInfo] of Object.entries(data.via_methods || {})) {
+                if (methodInfo.status !== 'free') {
+                    createBadge(methodName, methodInfo, methodsContainer);
+                }
+            }
+            for (const [lineName, lineInfo] of Object.entries(data.transmission_lines || {})) {
+                if (lineInfo.status !== 'free') {
+                    createBadge(lineName, lineInfo, linesContainer);
+                }
+            }
+
+            if (methodsContainer.children.length === 0) {
+                methodsContainer.innerHTML = '<span class="text-success small">همه روش‌ها آزاد هستند</span>';
+            }
+            if (linesContainer.children.length === 0) {
+                linesContainer.innerHTML = '<span class="text-success small">همه خطوط آزاد هستند</span>';
+            }
+        })
+        .catch(error => {
+            console.error("خطا در دریافت وضعیت منابع:", error);
+            document.getElementById('via-methods-status').innerHTML = '<span class="text-danger small">خطا در دریافت وضعیت</span>';
+            document.getElementById('transmission-lines-status').innerHTML = '<span class="text-danger small">خطا در دریافت وضعیت</span>';
+        });
+}
+
+// --- رویداد اصلی صفحه ---
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('shiftForm');
+    const submitButton = document.getElementById('submitButton');
+    const submitButtonReady = document.getElementById('submitButtonReady');
+    const submitButtonLoading = document.getElementById('submitButtonLoading');
+    let isSubmitting = false;
+    const activitySelect = document.getElementById('activity');
+    const activityConfigs = {{ activity_configs|tojson }};
+    const fields = {
+        network_name: document.getElementById('network_name'), 
+        location: document.getElementById('location'),
+        deliverer: document.getElementById('deliverer'), 
+        receiver: document.getElementById('receiver'),
+        via_method: document.getElementById('via_method'), 
+        transmission_line: document.getElementById('transmission_line'),
+        signal_time: document.getElementById('signal_time'), 
+        start_time: document.getElementById('start_time'), 
+        end_time: document.getElementById('end_time')
+    };
+
+    // رویداد submit فرم
+    form.addEventListener('submit', function(event) {
+        // کلیک دوم یا رویداد submit تکراری در همان صفحه را فوراً متوقف می‌کند.
+        if (isSubmitting) {
+            event.preventDefault();
+            return;
+        }
+
+        const invalidFields = form.querySelectorAll('.is-invalid');
+        invalidFields.forEach(field => field.classList.remove('is-invalid'));
+
+        let isValid = true;
+        const activity = activitySelect.value;
+
+        const requiredGeneralFields = ['date', 'activity', 'shift'];
+        requiredGeneralFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (!field.value) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            }
+        });
+
+        if (!validateShiftStaff()) isValid = false;
+
+        const config = activityConfigs[activity] || {enabled: [], required: []};
+        config.required.forEach(fieldName => {
+            if (fields[fieldName] && !fields[fieldName].value) {
+                fields[fieldName].classList.add('is-invalid');
+                isValid = false;
+            }
+        });
+        
+        if (!validateTimeSequence()) isValid = false;
+        
+        if (isValid) {
+            // ارسال عادی مرورگر ادامه پیدا می‌کند؛ form.submit() نباید اینجا
+            // فراخوانی شود، چون باعث ایجاد درخواست دوم می‌شد.
+            isSubmitting = true;
+            submitButton.disabled = true;
+            submitButton.setAttribute('aria-disabled', 'true');
+            submitButtonReady.classList.add('d-none');
+            submitButtonLoading.classList.remove('d-none');
+        } else {
+            event.preventDefault();
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
+            alertDiv.setAttribute('role', 'alert');
+            alertDiv.innerHTML = `لطفاً فیلدهای ضروری را پر کنید.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`;
+            const existingAlert = form.parentElement.querySelector('.alert');
+            if (existingAlert) existingAlert.remove();
+            form.parentElement.insertBefore(alertDiv, form);
+            setTimeout(() => { if (alertDiv.parentNode) alertDiv.remove(); }, 6000);
+            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+    
+    // تابع برای فعال/غیرفعال کردن فیلدها
+    // تابع برای فعال/غیرفعال کردن فیلدها
+    function updateFieldStates() {
+        const activity = activitySelect.value;
+        const config = activityConfigs[activity] || {enabled: [], required: []};
+        // اول همه فیلدها را غیرفعال می‌کنیم
+        Object.values(fields).forEach(field => { if(field) field.disabled = true; });
+        config.enabled.forEach(fieldName => {
+            if (fields[fieldName]) fields[fieldName].disabled = false;
+        });
+    }
+    
+    if(activitySelect) {
+        activitySelect.addEventListener('change', updateFieldStates);
+        updateFieldStates();
+    }
+    
+    // رویدادهای فیلدهای زمانی
+    const timeInputs = document.querySelectorAll('.time-input');
+    timeInputs.forEach(input => {
+        input.addEventListener('input', () => formatTimeInput(input));
+        input.addEventListener('blur', () => {
+            validateTime(input.id, input.id.replace('_time', '_time_error'));
+            validateTimeSequence();
+        });
+    });
+    
+    // رویدادهای چکباکس‌های پرسنل
+    const staffCheckboxes = document.querySelectorAll('input[name="shift_staff"]');
+    staffCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', validateShiftStaff);
+    });
+    
+    // فراخوانی اولیه و تکرار برای وضعیت منابع
+    updateResourceStatus();
+    setInterval(updateResourceStatus, 30000);
+});
+</script>
+{% endblock %}

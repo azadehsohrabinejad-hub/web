@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ورود به سیستم</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-4-rtl.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome-5.min.css') }}">
+    <style>
+        /* اضافه کردن فونت آفلاین برای صفحه لاگین */
+        @font-face { font-family: 'Vazirmatn'; src: url('{{ url_for("static", filename="fonts/Vazirmatn-Regular.woff2") }}') format('woff2'); font-weight: 400; font-display: swap; }
+        @font-face { font-family: 'Vazirmatn'; src: url('{{ url_for("static", filename="fonts/Vazirmatn-Bold.woff2") }}') format('woff2'); font-weight: 700; font-display: swap; }
+
+        body { font-family: 'Vazirmatn', sans-serif; background-color: #f0f2f5; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .login-container { max-width: 400px; width: 100%; }
+        .card { border-radius: 15px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); border: none; }
+        .card-header { background-color: #007bff; color: white; text-align: center; border-radius: 15px 15px 0 0 !important; font-weight: bold; font-size: 1.2rem; }
+        .btn-primary { width: 100%; padding: 10px; font-weight: bold; }
+        .form-control { text-align: right; }
+        .alert { text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-user-shield"></i> ورود به سیستم مدیریت شیفت</div>
+            <div class="card-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">{{ message }}<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                <form method="POST" action="{{ url_for('main.login') }}">
+                    <div class="form-group"><label for="username">نام کاربری</label><input type="text" class="form-control" id="username" name="username" required></div>
+                    <div class="form-group"><label for="password">رمز عبور</label><input type="password" class="form-control" id="password" name="password" required></div>
+                    <button type="submit" class="btn btn-primary">ورود</button>
+                </form>
+                <div class="text-center mt-3"><a href="{{ url_for('main.forgot_password') }}">فراموشی رمز عبور؟</a></div>
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/jquery-slim.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap-4.bundle.min.js') }}"></script>
+</body>
+</html>

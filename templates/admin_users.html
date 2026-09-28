@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}
+مدیریت کاربران
+{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <div class="card shadow">
+
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                مدیریت نقش کاربران
+            </h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-bordered table-hover">
+
+                    <thead class="table-light">
+
+                        <tr>
+                            <th>نام کاربری</th>
+                            <th>نقش فعلی</th>
+                            <th>تغییر نقش</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for user in users %}
+
+                        <tr>
+
+                            <td>
+
+                                <strong>
+                                    {{ user.username }}
+                                </strong>
+
+                                {% if user.username|lower == 'admin' %}
+
+                                <span class="badge bg-danger ms-2">
+                                    ادمین اصلی
+                                </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                {% if user.is_admin %}
+
+                                <span class="badge bg-primary">
+                                    Admin
+                                </span>
+
+                                {% else %}
+
+                                <span class="badge bg-secondary">
+                                    User
+                                </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                {% if user.username|lower != 'admin' %}
+
+                                <form
+                                    method="POST"
+                                    action="{{ url_for(
+                                        'main.admin_user_role',
+                                        user_id=user.id
+                                    ) }}"
+                                >
+
+                                    <div class="input-group">
+
+                                        <select
+                                            name="role"
+                                            class="form-select"
+                                        >
+
+                                            <option
+                                                value="user"
+                                                {% if user.role == 'user' %}
+                                                selected
+                                                {% endif %}
+                                            >
+                                                User
+                                            </option>
+
+                                            <option
+                                                value="admin"
+                                                {% if user.role == 'admin' %}
+                                                selected
+                                                {% endif %}
+                                            >
+                                                Admin
+                                            </option>
+
+                                        </select>
+
+                                        <button
+                                            type="submit"
+                                            class="btn btn-primary"
+                                        >
+                                            ذخیره
+                                        </button>
+
+                                    </div>
+
+                                </form>
+
+                                {% else %}
+
+                                <span class="text-muted">
+                                    غیرقابل تغییر
+                                </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

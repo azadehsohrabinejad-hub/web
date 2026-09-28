@@ -1,0 +1,115 @@
+# ──────────────────────────────────────────────
+# فایل‌های حساس - هرگز آپلود نشن!
+# ──────────────────────────────────────────────
+.env
+*.env
+.env.local
+.env.production
+
+# دیتابیس
+*.db
+*.sqlite
+*.sqlite3
+shift.db
+instance/
+
+# آپلودهای کاربر
+uploads/
+static/uploads/
+
+# فایل‌های موقت پایتون
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+
+# فایل‌های سیستم
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# فایل‌های ویرایشگر
+.vscode/
+.idea/
+*.sublime-*
+*.swp
+*.swo
+
+# لاگ‌ها
+*.log
+logs/
+# Dependencies
+node_modules/
+venv/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Sensitive configuration
+.env
+.env.*
+!.env.example
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated data
+backups/
+reports/
+failed_reports/
+uploads/
+logs/
+temp/
+
+# Build outputs
+build/
+dist/
+
+# Certificates and secrets
+*.pem
+*.pfx
+*.p12
+*.key
+*.cer
+*.crt
+
+# System files
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+# Review before publishing
+config.py
+web.config
+server.ini
+startup_log.txt
+waitress_log.txt
+cache/
+mpl_config/
+app_broken.py
+/python
+/start_date)
+/add_user_now.py
+/reset_admin.py
+/create_admin.py
+/create_users.py
+/init_db.py

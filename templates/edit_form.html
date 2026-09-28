@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}ویرایش رکورد شماره {{ record.row_number }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">
+                <i class="fas fa-edit"></i> ویرایش رکورد شماره {{ record.row_number }}
+            </h4>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('main.edit_record', record_id=record.id) }}" class="needs-validation" novalidate>
+                
+                <!-- بخش ۱: اطلاعات اصلی -->
+                <h5 class="border-bottom pb-2 mb-3"><i class="fas fa-info-circle"></i> اطلاعات اصلی</h5>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="row_number" class="form-label">ردیف</label>
+                        <input type="number" class="form-control" id="row_number" name="row_number" value="{{ record.row_number }}" required readonly>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="date" class="form-label">تاریخ</label>
+                        <input type="text" class="form-control" id="date" name="date" value="{{ record.date }}" placeholder="YYYY/MM/DD" required>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="shift" class="form-label">شیفت</label>
+                        <select class="form-select" id="shift" name="shift" required>
+                            <option value="" disabled>-- انتخاب شیفت --</option>
+                            {% for shift in shifts %}
+                                <option value="{{ shift }}" {% if record.shift == shift %}selected{% endif %}>{{ shift }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="location" class="form-label">لوکیشن</label>
+                        <input type="text" class="form-control" id="location" name="location" value="{{ record.location or '' }}" placeholder="مثال: استودیو اصلی">
+                    </div>
+                </div>
+
+                <!-- بخش ۲: اطلاعات شبکه و فعالیت -->
+                <h5 class="border-bottom pb-2 mb-3"><i class="fas fa-broadcast-tower"></i> شبکه و فعالیت</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="network_name" class="form-label">نام شبکه</label>
+                        <select class="form-select" id="network_name" name="network_name">
+                            <option value="" disabled>-- انتخاب شبکه --</option>
+                            {% for network in network_names %}
+                                <option value="{{ network }}" {% if record.network_name == network %}selected{% endif %}>{{ network }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="activity" class="form-label">فعالیت</label>
+                        <select class="form-select" id="activity" name="activity" required>
+                            <option value="" disabled>-- انتخاب فعالیت --</option>
+                            {% for activity in activities %}
+                                <option value="{{ activity }}" {% if record.activity == activity %}selected{% endif %}>{{ activity }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- بخش ۳: اطلاعات تحویل -->
+                <h5 class="border-bottom pb-2 mb-3"><i class="fas fa-exchange-alt"></i> اطلاعات تحویل</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="deliverer" class="form-label">تحویل‌دهنده</label>
+                        <input type="text" class="form-control" id="deliverer" name="deliverer" value="{{ record.deliverer or '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="receiver" class="form-label">تحویل‌گیرنده</label>
+                        <input type="text" class="form-control" id="receiver" name="receiver" value="{{ record.receiver or '' }}">
+                    </div>
+                </div>
+
+                <!-- بخش ۴: زمان‌بندی -->
+                <h5 class="border-bottom pb-2 mb-3"><i class="fas fa-clock"></i> زمان‌بندی</h5>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="signal_time" class="form-label">ساعت دریافت سیگنال</label>
+                        <input type="time" class="form-control" id="signal_time" name="signal_time" value="{{ record.signal_time or '' }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="start_time" class="form-label">ساعت شروع</label>
+                        <input type="time" class="form-control" id="start_time" name="start_time" value="{{ record.start_time or '' }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="end_time" class="form-label">ساعت پایان</label>
+                        <input type="time" class="form-control" id="end_time" name="end_time" value="{{ record.end_time or '' }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="duration" class="form-label">مدت زمان</label>
+                        <input type="text" class="form-control" id="duration" name="duration" value="{{ record.duration or '00:00:00' }}" readonly>
+                    </div>
+                </div>
+
+                <!-- بخش ۵: روش ارسال -->
+                <h5 class="border-bottom pb-2 mb-3"><i class="fas fa-paper-plane"></i> روش ارسال</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="via_method" class="form-label">از طریق</label>
+                        <select class="form-select" id="via_method" name="via_method">
+                            <option value="" disabled>-- انتخاب روش --</option>
+                            {% for method in via_methods %}
+                                <option value="{{ method }}" {% if record.via_method == method %}selected{% endif %}>{{ method }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="transmission_line" class="form-label">خط ارسالی</label>
+                        <select class="form-select" id="transmission_line" name="transmission_line">
+                            <option value="">انتخاب روش</option>
+                            {% for line in transmission_lines %}
+                                <option value="{{ line }}" {% if record.transmission_line == line %}selected{% endif %}>{{ line }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- بخش ۶: جزئیات و توضیحات -->
+                <h5 class="border-bottom pb-2 mb-3"><i class="fas fa-align-left"></i> جزئیات و توضیحات</h5>
+                
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <label for="shift_staff" class="form-label">پرسنل شیفت</label>
+                        <select class="form-select" id="shift_staff" name="shift_staff" multiple>
+                            {% for person in staff %}
+                                <option value="{{ person }}" {% if person in record.shift_staff.split(', ') %}selected{% endif %}>{{ person }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted">برای انتخاب چند نفر، کلید Ctrl را نگه دارید.</small>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="description" class="form-label">توضیحات</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="توضیحات بیشتر در مورد این گزارش...">{{ record.description or '' }}</textarea>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="comments" class="form-label">کامنت کاربر</label>
+                        <textarea class="form-control" id="comments" name="comments" rows="3" placeholder="یادداشت یا کامنت کاربر...">{{ record.comments or '' }}</textarea>
+                    </div>
+                </div>
+
+                <!-- بخش ۷: پاسخ ادمین -->
+                <h5 class="border-bottom pb-2 mb-3"><i class="fas fa-user-shield"></i> پاسخ ادمین</h5>
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <label for="admin_reply" class="form-label">پاسخ ادمین</label>
+                        <textarea class="form-control" id="admin_reply" name="admin_reply" rows="3" placeholder="پاسخ یا تاییدیه مدیر...">{{ record.admin_reply or '' }}</textarea>
+                    </div>
+                </div>
+                
+                <!-- بخش ۸: اطلاعات ثبت‌کننده -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="alert alert-light d-flex align-items-center" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <div>
+                                <strong>ثبت شده توسط:</strong> {{ record.created_by }} در تاریخ {{ record.date }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- دکمه‌ها -->
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('main.records') }}" class="btn btn-secondary">
+                        <i class="fas fa-times-circle"></i> انصراف
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> ذخیره تغییرات
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

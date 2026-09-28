@@ -1,0 +1,14 @@
+/* آیکون‌های آفلاین بدون وابستگی به فایل فونت؛ مانع نمایش مربع می‌شود. */
+.fas::before,.far::before{font-family:Arial,"Segoe UI Symbol",sans-serif!important;font-weight:bold!important;font-style:normal}
+.fa-chart-line::before{content:"↗"}.fa-plus-circle::before{content:"+"}.fa-list::before{content:"≡"}
+.fa-tachometer-alt::before{content:"◴"}.fa-chart-bar::before{content:"▥"}.fa-list-alt::before{content:"☰"}
+.fa-user::before{content:"●"}.fa-key::before{content:"⚿"}.fa-info-circle::before{content:"ⓘ"}
+.fa-sign-out-alt::before{content:"↪"}.fa-calendar::before{content:"▣"}.fa-clipboard-check::before{content:"☑"}
+.fa-broadcast-tower::before{content:"⌁"}.fa-tasks::before{content:"☑"}.fa-sync-alt::before{content:"↻"}
+.fa-wifi::before{content:"≋"}.fa-save::before{content:"▣"}.fa-copy::before{content:"▦"}
+.fa-exclamation-triangle::before{content:"!"}.fa-redo::before{content:"↻"}.fa-tv::before{content:"▣"}
+.fa-clock::before{content:"◷"}.fa-search::before{content:"⌕"}.fa-edit::before{content:"✎"}
+.fa-trash::before{content:"×"}.fa-file-excel::before{content:"▤"}.fa-file-pdf::before{content:"▧"}
+.fa-envelope::before{content:"✉"}.fa-paper-plane::before{content:"➤"}.fa-arrow-right::before{content:"←"}
+.fa-align-left::before{content:"☷"}.fa-eraser::before{content:"⌫"}.fa-exchange-alt::before{content:"⇄"}
+.fa-times-circle::before{content:"⊗"}.fa-user-shield::before{content:"♜"}

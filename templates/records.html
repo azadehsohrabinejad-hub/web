@@ -1,0 +1,386 @@
+{% extends "base.html" %}
+
+{% block title %}لیست اطلاعات - سیستم جامع گزارش گیری{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- فرم فیلترها به این صفحه اضافه شده -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">فیلتر گزارش‌ها</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('main.records') }}" id="recordsFilterForm">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label for="start_date" class="form-label">از تاریخ</label>
+                        <input type="text" name="start_date" id="start_date" class="form-control jalali-datepicker" placeholder="انتخاب تاریخ شروع" autocomplete="off">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="end_date" class="form-label">تا تاریخ</label>
+                        <input type="text" name="end_date" id="end_date" class="form-control jalali-datepicker" placeholder="انتخاب تاریخ پایان" autocomplete="off">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="network" class="form-label">نام شبکه</label>
+                        <select name="network" id="network" class="form-select">
+                            <option value="">همه شبکه‌ها</option>
+                            {% for network in network_names %}
+                                <option value="{{ network }}">{{ network }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="activity" class="form-label">نوع فعالیت</label>
+                        <select name="activity" id="activity" class="form-select">
+                            <option value="">همه فعالیت‌ها</option>
+                            {% for activity in activities %}
+                                <option value="{{ activity }}">{{ activity }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">اعمال فیلتر</button>
+                        <a href="{{ url_for('main.records') }}" class="btn btn-secondary">پاک کردن فیلتر</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <h1 class="h3 mb-4 text-gray-800">لیست گزارش‌های ثبت شده</h1>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>تاریخ</th>
+                            <th>شیفت</th>
+                            <th>شبکه</th>
+                            <th>فعالیت</th>
+                            <th>کاربر ثبت‌کننده</th>
+                            <th>تحویل‌دهنده</th>
+                            <th>تحویل‌گیرنده</th>
+                            <th>از طریق</th>
+                            <th>خط ارسالی</th>
+                            <th>ساعت شروع</th>
+                            <th>ساعت پایان</th>
+                            <th>کامنت</th>
+                            <th>پاسخ ادمین</th>
+                            <th>توضیحات</th>
+                            {% if current_user.is_admin %}
+                            <th>عملیات</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in records.items %}
+                        <tr data-record-id="{{ r.id }}">
+                            <td>{{ r.date }}</td>
+                            <td>{{ r.shift }}</td>
+                            <td>{{ r.network_name or '-' }}</td>
+                            <td>{{ r.activity }}</td>
+                            <td>{{ r.created_by }}</td>
+                            <td>{{ r.deliverer or '-' }}</td>
+                            <td>{{ r.receiver or '-' }}</td>
+                            <td>{{ r.via_method or '-' }}</td>
+                            <td>{{ r.transmission_line or '-' }}</td>
+                            <td>{{ r.start_time or '-' }}</td>
+                            <td>{{ r.end_time or '-' }}</td>
+                            <td>
+                                {% if r.comments %}
+                                <a href="javascript:void(0);"
+                                class="text-primary"
+                                onclick='openCommentModal(
+                                    {{ r.id }},
+                                    {{ (r.comments or "") | tojson }},
+                                    {{ (r.admin_reply or "") | tojson }}
+                                )'>
+                                    {{ r.comments[:20] }}{% if r.comments|length > 20 %}...{% endif %}
+                                </a>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td class="admin-reply-cell">
+                                {% if r.admin_reply %}
+                                <span class="text-success">{{ r.admin_reply[:20] }}{% if r.admin_reply|length > 20 %}...{% endif %}</span>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <!-- === تغییر در این بخش === -->
+                            <td>
+                                {% if r.description %}
+                                    <div class="description-container">
+                                        <span class="description-text">{{ r.description[:50] }}{% if r.description|length > 50 %}...{% endif %}</span>
+                                        {% if r.description|length > 50 %}
+                                            <button class="btn btn-sm btn-link p-0 ms-1 show-description-btn" data-description="{{ r.description | e }}">بیشتر</button>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            {% if current_user.is_admin %}
+                            <td>
+                                <a href="{{ url_for('main.edit_record', record_id=r.id) }}" class="btn btn-sm btn-warning">
+                                    <i class="fas fa-edit"></i> ویرایش
+                                </a>
+                                <button class="btn btn-sm btn-danger" onclick="deleteRecord({{ r.id }}, this)">
+                                    <i class="fas fa-trash"></i> حذف
+                                </button>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- Pagination (کد صفحه‌بندی بدون تغییر) -->
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {% if not records.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{% if records.has_prev %}{{ url_for('main.records', page=records.prev_num, start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', ''), network=request.args.get('network', ''), activity=request.args.get('activity', ''), sort=request.args.get('sort', 'date'), order=request.args.get('order', 'desc')) }}{% else %}#{% endif %}">
+                            قبلی
+                        </a>
+                    </li>
+                    {% for page_num in records.iter_pages(left_edge=2, left_current=2, right_current=2, right_edge=2) %}
+                        {% if page_num %}
+                            <li class="page-item {% if page_num == records.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('main.records', page=page_num, start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', ''), network=request.args.get('network', ''), activity=request.args.get('activity', ''), sort=request.args.get('sort', 'date'), order=request.args.get('order', 'desc')) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if not records.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{% if records.has_next %}{{ url_for('main.records', page=records.next_num, start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', ''), network=request.args.get('network', ''), activity=request.args.get('activity', ''), sort=request.args.get('sort', 'date'), order=request.args.get('order', 'desc')) }}{% else %}#{% endif %}">
+                            بعدی
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+    <section class="card shadow mb-4" id="shift-inspections">
+        <div class="card-header"><h2 class="h6 mb-0">بازدیدهای شیفت</h2></div>
+        <div class="card-body">
+            {% if inspections.items %}
+            <div class="table-responsive"><table class="table table-sm align-middle">
+                <thead><tr><th>تاریخ شروع</th><th>شیفت</th><th>ثبت‌کننده</th><th>دمای سرور</th><th>خلاصه</th><th>جزئیات</th></tr></thead>
+                <tbody>{% for inspection in inspections.items %}
+                {% set answers = json_loads(inspection.answers) %}
+                <tr><td>{{ inspection.jalali_date }}</td><td>{{ inspection.shift_name }}</td>
+                    <td>{{ inspection.created_by }} · {{ inspection.created_at.strftime('%H:%M') }}</td>
+                    <td>{{ inspection.temperature }} °C</td>
+                    <td>{{ answers | selectattr('status', 'equalto', 'ok') | list | length }} سالم،
+                        {{ answers | selectattr('status', 'equalto', 'issue') | list | length }} مشکل‌دار،
+                        {{ answers | selectattr('status', 'equalto', 'unknown') | list | length }} بررسی‌نشده</td>
+                    <td><details><summary class="btn btn-sm btn-outline-primary">{% if current_user.is_admin or current_user.username == inspection.created_by %}مشاهده، ویرایش و بازنشانی{% else %}مشاهده{% endif %}</summary>
+                        <ul class="mt-2 mb-1">{% for answer in answers %}<li>{{ answer.label }}: {{ answer_labels[answer.status] }}{% if answer.note %} — {{ answer.note }}{% endif %}</li>{% endfor %}</ul>
+                        {% if inspection.notes %}<p class="small">توضیحات: {{ inspection.notes }}</p>{% endif %}
+                        {% if current_user.is_admin or current_user.username == inspection.created_by %}
+                        <form method="post" action="{{ url_for('main.admin_shift_checklist', record_id=inspection.id) }}" class="border rounded p-3 mt-2">
+                            <input type="hidden" name="token" value="{{ checklist_token }}">
+                            <input type="hidden" name="revision" value="{{ checklist_revision(inspection) }}">
+                            <input type="hidden" name="checklist_page" value="{{ inspections.page }}">
+                            <strong class="d-block mb-2">اصلاح بازدید</strong>
+                            {% for answer in answers %}<div class="row g-2 align-items-center mb-2">
+                                <label class="col-lg-4" for="status_{{ inspection.id }}_{{ loop.index }}">{{ answer.label }}</label>
+                                <div class="col-lg-3"><select class="form-select form-select-sm" id="status_{{ inspection.id }}_{{ loop.index }}" name="status_{{ answer.id }}">
+                                    {% for key, label in answer_labels.items() %}<option value="{{ key }}" {% if answer.status == key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                                </select></div>
+                                <div class="col-lg-5"><input type="text" class="form-control form-control-sm" name="note_{{ answer.id }}" value="{{ answer.note or '' }}" maxlength="500" placeholder="شرح مشکل"></div>
+                            </div>{% endfor %}
+                            <div class="row g-2 mb-2"><div class="col-sm-4"><label class="form-label">دمای سرور (°C)<input class="form-control form-control-sm" name="temperature" type="number" step="0.1" value="{{ inspection.temperature }}" required></label></div>
+                            <div class="col-sm-8"><label class="form-label w-100">توضیحات<input class="form-control form-control-sm" name="notes" value="{{ inspection.notes or '' }}" maxlength="1000"></label></div></div>
+                            <label class="form-label w-100">علت تغییر (الزامی)<input class="form-control form-control-sm" name="reason" minlength="3" maxlength="500" required></label>
+                            <div class="d-flex flex-wrap gap-2 mt-2"><button type="submit" name="action" value="edit" class="btn btn-sm btn-primary">ذخیرهٔ اصلاحات</button>
+                            {% if inspection.shift_start == current_shift_start %}<button type="submit" name="action" value="reset" class="btn btn-sm btn-outline-danger" onclick="return confirm('بازدید این شیفت بازنشانی شود؟ فرم دوباره قابل تکمیل خواهد بود.')">بازنشانی بازدید این شیفت</button>{% else %}<button type="submit" name="action" value="delete" class="btn btn-sm btn-outline-danger" onclick="return confirm('این بازدید قدیمی از فهرست حذف شود؟ نسخهٔ قبلی در سابقهٔ مدیریتی محفوظ می‌ماند.')">حذف بازدید قدیمی</button>{% endif %}</div>
+                        </form>
+                        {% endif %}
+                    </details></td></tr>
+                {% endfor %}</tbody>
+            </table></div>
+            <nav aria-label="صفحات بازدید شیفت" class="d-flex gap-2 justify-content-center">
+                {% if inspections.has_prev %}<a href="{{ url_for('main.records', checklist_page=inspections.prev_num, page=request.args.get('page', 1), start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', ''), network=request.args.get('network', ''), activity=request.args.get('activity', '')) }}#shift-inspections">قبلی</a>{% endif %}
+                <span>صفحه {{ inspections.page }} از {{ inspections.pages }}</span>
+                {% if inspections.has_next %}<a href="{{ url_for('main.records', checklist_page=inspections.next_num, page=request.args.get('page', 1), start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', ''), network=request.args.get('network', ''), activity=request.args.get('activity', '')) }}#shift-inspections">بعدی</a>{% endif %}
+            </nav>
+            {% else %}<p class="text-muted mb-0">هنوز بازدیدی ثبت نشده است.</p>{% endif %}
+        </div>
+    </section>
+</div>
+
+<!-- Modal برای کامنت‌ها -->
+<div class="modal fade" id="commentModal" tabindex="-1" aria-labelledby="commentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="commentModalLabel">مدیریت کامنت‌ها</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="commentForm">
+                    <input type="hidden" id="record_id" name="record_id">
+                    <div class="mb-3">
+                        <label for="user_comment" class="form-label">کامنت کاربر:</label>
+                        <textarea class="form-control" id="user_comment" name="user_comment" rows="3" readonly></textarea>
+                    </div>
+                    {% if current_user.is_admin %}
+                    <div class="mb-3">
+                        <label for="admin_reply" class="form-label">پاسخ ادمین:</label>
+                        <textarea class="form-control" id="admin_reply" name="admin_reply" rows="3"></textarea>
+                    </div>
+                    {% endif %}
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+                {% if current_user.is_admin %}
+                <button type="button" class="btn btn-primary" onclick="saveComment()">ذخیره پاسخ</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal برای توضیحات کامل -->
+<div class="modal fade" id="descriptionModal" tabindex="-1" aria-labelledby="descriptionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="descriptionModalLabel">توضیحات کامل</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="fullDescriptionText" style="white-space: pre-wrap;"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// اسکریپت کامنت‌ها
+function openCommentModal(id, userComment, adminReply) {
+
+    const recordIdElement = document.getElementById('record_id');
+    const userCommentElement = document.getElementById('user_comment');
+    const adminReplyElement = document.getElementById('admin_reply');
+
+    if (recordIdElement) {
+        recordIdElement.value = id;
+    }
+
+    if (userCommentElement) {
+        userCommentElement.value = userComment || '';
+    }
+
+    // این فیلد فقط برای Admin وجود دارد
+    if (adminReplyElement) {
+        adminReplyElement.value = adminReply || '';
+    }
+
+    const modalElement = document.getElementById('commentModal');
+
+    if (modalElement) {
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+    }
+}
+
+function saveComment() {
+    const recordId = document.getElementById('record_id').value;
+    const adminReplyText = document.getElementById('admin_reply').value;
+    
+    fetch(`/update_comment/${recordId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ admin_reply: adminReplyText }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('commentModal'));
+            modal.hide();
+            const row = document.querySelector(`tr[data-record-id="${recordId}"]`);
+            if (row) {
+                const replyCell = row.querySelector('.admin-reply-cell');
+                if (replyCell) {
+                    const shortReply = adminReplyText.length > 20 ? adminReplyText.substring(0, 20) + '...' : adminReplyText;
+                    replyCell.innerHTML = adminReplyText.trim() === '' ? '-' : `<span class="text-success">${shortReply}</span>`;
+                }
+            }
+        } else {
+            alert('خطا در ذخیره پاسخ: ' + (data.message || 'خطای نامشخص'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('خطا در ارتباط با سرور.');
+    });
+}
+
+function deleteRecord(recordId, buttonElement) {
+    if (confirm('آیا از حذف این رکورد اطمینان دارید؟ این عملیات غیرقابل بازگشت است.')) {
+        fetch(`/delete_record/${recordId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const row = buttonElement.closest('tr');
+                row.style.transition = 'opacity 0.5s';
+                row.style.opacity = '0';
+                setTimeout(() => row.remove(), 500);
+            } else {
+                alert(data.message || 'خطا در حذف رکورد.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('خطا در ارتباط با سرور.');
+        });
+    }
+}
+
+// === تغییر در این بخش (Event Delegation) ===
+document.addEventListener('DOMContentLoaded', function() {
+    // پیدا کردن یک والد ثابت (مثلاً بدنه جدول)
+    const tableBody = document.querySelector('#dataTable tbody');
+
+    // اضافه کردن یک شنونده رویداد کلیک به والد
+    tableBody.addEventListener('click', function(event) {
+        // بررسی اینکه آیا عنصر کلیک شده یا یکی از والدینش دکمه "بیشتر" است
+        const showMoreBtn = event.target.closest('.show-description-btn');
+        
+        if (showMoreBtn) {
+            // گرفتن توضیحات از ویژگی data-description
+            const description = showMoreBtn.getAttribute('data-description');
+            if (description) {
+                document.getElementById('fullDescriptionText').textContent = description;
+                const modal = new bootstrap.Modal(document.getElementById('descriptionModal'));
+                modal.show();
+            }
+        }
+    });
+
+    // اسکریپت جدید برای تاریخ شمسی
+    $(".jalali-datepicker").persianDatepicker({
+        format: 'YYYY/MM/DD',
+        autoClose: true,
+        initialValue: false,
+        observer: true,
+        calendar: { persian: { locale: 'fa', showHint: false, leapYearMode: 'algorithmic' } },
+        navigator: { enabled: true, scroll: { enabled: true }, text: { btnNextText: '<', btnPrevText: '>' } }
+    });
+});
+</script>
+{% endblock %}

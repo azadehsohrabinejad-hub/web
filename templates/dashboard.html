@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}داشبورد - سیستم جامع گزارش گیری{% endblock %}
+
+{% block content %}
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">داشبورد</h1>
+    <div class="d-flex align-items-center">
+        <form method="GET" action="{{ url_for('main.dashboard') }}" class="d-flex align-items-center me-3">
+            <div class="form-check form-check-inline ms-2">
+                <input class="form-check-input" type="radio" name="range" id="range_daily" value="daily" {% if request.args.get('range') == 'daily' or not request.args.get('range') %}checked{% endif %}>
+                <label class="form-check-label" for="range_daily">روزانه</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="range" id="range_weekly" value="weekly" {% if request.args.get('range') == 'weekly' %}checked{% endif %}>
+                <label class="form-check-label" for="range_weekly">هفتگی</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="range" id="range_monthly" value="monthly" {% if request.args.get('range') == 'monthly' %}checked{% endif %}>
+                <label class="form-check-label" for="range_monthly">ماهانه</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="range" id="range_yearly" value="yearly" {% if request.args.get('range') == 'yearly' %}checked{% endif %}>
+                <label class="form-check-label" for="range_yearly">سالانه</label>
+            </div>
+            <button type="submit" class="btn btn-sm btn-outline-primary ms-3">اعمال</button>
+        </form>
+    </div>
+</div>
+
+<!-- Content Row - کارت‌های آماری -->
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">کل گزارش‌ها</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_records }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">گزارش‌های امروز</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ today_records }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clipboard-check fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">فعالیت اصلی</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ most_common_activity }}</div>
+                        <div class="text-xs text-gray-500">{{ most_common_count }} بار</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-list fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">شبکه اصلی</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ most_common_network }}</div>
+                        <div class="text-xs text-gray-500">{{ most_common_network_count }} بار</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-broadcast-tower fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Content Row - نمودارها -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">روند فعالیت‌ها</h6>
+            </div>
+            <div class="card-body" style="height: 400px; padding: 1rem;">
+                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                    {% if timeline_chart %}
+                    <img src="data:image/png;base64,{{ timeline_chart }}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    {% else %}
+                    <p class="text-center text-muted">داده‌ای برای نمایش نمودار وجود ندارد.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">توزیع فعالیت‌ها</h6>
+            </div>
+            <div class="card-body" style="height: 400px; padding: 1rem;">
+                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                    {% if activity_chart %}
+                    <img src="data:image/png;base64,{{ activity_chart }}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    {% else %}
+                    <p class="text-center text-muted">داده‌ای برای نمایش نمودار وجود ندارد.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">فعالیت‌ها بر اساس شبکه</h6>
+            </div>
+            <div class="card-body" style="height: 400px; padding: 1rem;">
+                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                    {% if network_chart %}
+                    <img src="data:image/png;base64,{{ network_chart }}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    {% else %}
+                    <p class="text-center text-muted">داده‌ای برای نمایش نمودار وجود ندارد.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">مجموع مدت زمان قطعی صدا</h6>
+            </div>
+            <div class="card-body" style="height: 400px; padding: 1rem;">
+                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                    {% if audio_outage_chart %}
+                    <img src="data:image/png;base64,{{ audio_outage_chart }}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    {% else %}
+                    <p class="text-center text-muted">داده‌ای برای نمایش نمودار وجود ندارد.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

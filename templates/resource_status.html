@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}وضعیت منابع{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">وضعیت منابع</h2>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <h3>خطوط انتقال</h3>
+            <div class="table-responsive">
+                <table class="table table-striped" id="transmission-lines-table">
+                    <thead>
+                        <tr>
+                            <th>خط انتقال</th>
+                            <th>وضعیت</th>
+                            <th>اطلاعات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for line in transmission_lines %}
+                        <tr>
+                            <td>{{ line }}</td>
+                            <td class="status-cell" data-resource="{{ line }}" data-type="transmission_line">
+                                <span class="badge badge-secondary">در حال بررسی...</span>
+                            </td>
+                            <td class="info-cell" data-resource="{{ line }}" data-type="transmission_line">
+                                -
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <h3>روش‌های ارتباطی</h3>
+            <div class="table-responsive">
+                <table class="table table-striped" id="via-methods-table">
+                    <thead>
+                        <tr>
+                            <th>روش ارتباطی</th>
+                            <th>وضعیت</th>
+                            <th>اطلاعات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for method in via_methods %}
+                        <tr>
+                            <td>{{ method }}</td>
+                            <td class="status-cell" data-resource="{{ method }}" data-type="via_method">
+                                <span class="badge badge-secondary">در حال بررسی...</span>
+                            </td>
+                            <td class="info-cell" data-resource="{{ method }}" data-type="via_method">
+                                -
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-4">
+        <button id="refresh-btn" class="btn btn-primary">به‌روزرسانی</button>
+        <small class="text-muted">آخرین به‌روزرسانی: <span id="last-update">-</span></small>
+    </div>
+</div>
+
+<script>
+    function updateResourceStatus() {
+        fetch('/api/resource_status')
+            .then(response => response.json())
+            .then(data => {
+                // به‌روزرسانی خطوط انتقال
+                document.querySelectorAll('.status-cell[data-type="transmission_line"]').forEach(cell => {
+                    const resource = cell.getAttribute('data-resource');
+                    const status = data.transmission_lines[resource];
+                    const infoCell = document.querySelector(`.info-cell[data-resource="${resource}"][data-type="transmission_line"]`);
+                    
+                    if (status) {
+                        if (status.status === 'busy') {
+                            cell.innerHTML = `<span class="badge badge-danger">مشغول</span>`;
+                            infoCell.innerHTML = `${status.network} - ${status.activity}<br>از ${status.start_time} تا ${status.end_time}`;
+                        } else {
+                            cell.innerHTML = `<span class="badge badge-success">آزاد</span>`;
+                            infoCell.innerHTML = status.message;
+                        }
+                    }
+                });
+                
+                // به‌روزرسانی روش‌های ارتباطی
+                document.querySelectorAll('.status-cell[data-type="via_method"]').forEach(cell => {
+                    const resource = cell.getAttribute('data-resource');
+                    const status = data.via_methods[resource];
+                    const infoCell = document.querySelector(`.info-cell[data-resource="${resource}"][data-type="via_method"]`);
+                    
+                    if (status) {
+                        if (status.status === 'busy') {
+                            cell.innerHTML = `<span class="badge badge-danger">مشغول</span>`;
+                            infoCell.innerHTML = `${status.network} - ${status.activity}<br>از ${status.start_time} تا ${status.end_time}`;
+                        } else {
+                            cell.innerHTML = `<span class="badge badge-success">آزاد</span>`;
+                            infoCell.innerHTML = status.message;
+                        }
+                    }
+                });
+                
+                // به‌روزرسانی زمان آخرین آپدیت
+                document.getElementById('last-update').textContent = new Date().toLocaleTimeString('fa-IR');
+            })
+            .catch(error => {
+                console.error('Error fetching resource status:', error);
+            });
+    }
+    
+    // بارگذاری اولیه
+    document.addEventListener('DOMContentLoaded', function() {
+        updateResourceStatus();
+        
+        // تنظیم به‌روزرسانی خودکار هر 30 ثانیه
+        setInterval(updateResourceStatus, 30000);
+        
+        // دکمه به‌روزرسانی دستی
+        document.getElementById('refresh-btn').addEventListener('click', updateResourceStatus);
+    });
+</script>
+{% endblock %}

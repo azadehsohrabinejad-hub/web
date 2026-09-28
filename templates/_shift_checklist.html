@@ -1,0 +1,57 @@
+<section class="card checklist-card shadow mt-3" aria-label="بازدید شیفت">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center">
+      <h6 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>بازدید شیفت</h6>
+      <span id="checklistBadge" class="badge bg-secondary">در حال بررسی</span>
+    </div>
+    <div id="checklistShift" class="small text-muted mt-2">وضعیت شیفت در حال بارگذاری است...</div>
+    <div id="checklistSummary" class="mt-2 small" aria-live="polite"></div>
+    <button type="button" id="checklistOpen" class="btn btn-primary btn-sm mt-3 d-none" data-bs-toggle="modal" data-bs-target="#checklistModal">تکمیل چک‌لیست</button>
+    <div id="checklistActions" class="d-none mt-3">
+      <a class="btn btn-outline-primary btn-sm" href="{{ url_for('main.records') }}#shift-inspections">ویرایش / حذف در لیست اطلاعات</a>
+      <button type="button" id="checklistResetOpen" class="btn btn-outline-danger btn-sm">بازنشانی بازدید این شیفت</button>
+      <form id="checklistResetForm" class="d-none mt-2" method="post" action="">
+        <input type="hidden" name="token" value="{{ checklist_token }}">
+        <input type="hidden" id="checklistRevision" name="revision">
+        <input type="hidden" name="action" value="reset">
+        <input type="hidden" name="source" value="form">
+        <label for="checklistResetReason" class="form-label small">علت بازنشانی</label>
+        <input id="checklistResetReason" name="reason" class="form-control form-control-sm" minlength="3" maxlength="500" required>
+        <button type="submit" class="btn btn-danger btn-sm mt-2" onclick="return confirm('بازدید این شیفت بازنشانی شود؟')">تأیید بازنشانی</button>
+        <button type="button" id="checklistResetCancel" class="btn btn-outline-secondary btn-sm mt-2">انصراف</button>
+      </form>
+    </div>
+    {% if current_user.is_admin %}<button type="button" id="checklistManageOpen" class="btn btn-outline-secondary btn-sm mt-3" data-bs-toggle="modal" data-bs-target="#checklistManageModal">تنظیم موارد</button>{% endif %}
+  </div>
+</section>
+
+<div class="modal fade" id="checklistModal" tabindex="-1" aria-labelledby="checklistTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+    <div class="modal-content checklist-modal">
+      <div class="modal-header">
+        <div><h5 class="modal-title" id="checklistTitle">بازدید شیفت</h5><small id="checklistModalShift" class="text-muted"></small></div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+      </div>
+      <form id="checklistForm" class="checklist-form-layout">
+        <div class="modal-body">
+          <p class="small text-muted">برای هر مورد یک وضعیت انتخاب کنید. گزارش‌های معمول مستقل از این فرم ثبت می‌شوند.</p>
+          <div id="checklistItems"></div>
+          <div class="checklist-item border rounded p-3 mb-2"><label for="serverTemperature" class="form-label fw-semibold">دمای سرور (°C) — ورود مقدار</label><input id="serverTemperature" name="temperature" type="number" step="0.1" class="form-control" required></div>
+          <label for="checklistNotes" class="form-label">توضیح کلی (اختیاری)</label><textarea id="checklistNotes" class="form-control" rows="2" maxlength="1000"></textarea>
+          <div id="checklistError" class="alert alert-danger mt-3 d-none" role="alert"></div>
+        </div>
+        <div class="modal-footer"><span id="checklistProgress" class="small text-muted me-auto"></span><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">انصراف</button><button id="checklistSave" type="submit" class="btn btn-success">ثبت نهایی بازدید</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+{% if current_user.is_admin %}
+<div class="modal fade" id="checklistManageModal" tabindex="-1" aria-labelledby="checklistManageTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg"><div class="modal-content checklist-modal">
+    <div class="modal-header"><h5 class="modal-title" id="checklistManageTitle">تنظیم موارد بازدید</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button></div>
+    <div class="modal-body"><p class="small text-muted">تغییرات از شیفت‌های بعدی اعمال می‌شود؛ گزارش‌های ثبت‌شده محفوظ می‌مانند.</p><div id="checklistManageItems"></div><button type="button" id="checklistAddItem" class="btn btn-outline-primary btn-sm mt-2">افزودن مورد</button><div id="checklistManageError" class="alert alert-danger mt-3 d-none"></div></div>
+    <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">انصراف</button><button type="button" id="checklistManageSave" class="btn btn-success">ذخیره موارد</button></div>
+  </div></div>
+</div>
+{% endif %}
+<script id="checklistConfig" type="application/json">{{ {'token': checklist_token, 'url': url_for('main.shift_checklist_status'), 'manageUrl': url_for('main.manage_shift_checklist') if current_user.is_admin else None} | tojson }}</script>

@@ -1,0 +1,482 @@
+/* static/css/style.css */
+
+/* 1. وارد کردن فونت‌های آفلاین */
+/* --- فونت‌های آفلاین --- */
+
+/* فونت وزیرمتن */
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('../fonts/Vazirmatn-Light.woff2') format('woff2');
+    font-weight: 300;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('../fonts/Vazirmatn-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('../fonts/Vazirmatn-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('../fonts/Vazirmatn-SemiBold.woff2') format('woff2');
+    font-weight: 600;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('../fonts/Vazirmatn-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('../fonts/Vazirmatn-ExtraBold.woff2') format('woff2');
+    font-weight: 800;
+    font-display: swap;
+}
+
+/* فونت اینتر */
+@font-face {
+    font-family: 'Inter';
+    src: url('../fonts/Inter-Light.woff2') format('woff2');
+    font-weight: 300;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Inter';
+    src: url('../fonts/Inter-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Inter';
+    src: url('../fonts/Inter-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Inter';
+    src: url('../fonts/Inter-SemiBold.woff2') format('woff2');
+    font-weight: 600;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Inter';
+    src: url('../fonts/Inter-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-display: swap;
+}
+
+/* --- پایان فونت‌های آفلاین --- */
+/* 2. تعریف متغیرهای رنگی و طراحی */
+:root {
+    --primary-color: #3f51b5;      /* آبی ایندایگو (حرفه‌ای‌تر) */
+    --secondary-color: #6c757d;    /* خاکستری ثانویه */
+    --success-color: #00a152;      /* سبز متعادل */
+    --info-color: #00bcd4;         /* فیروزه‌ای روشن */
+    --warning-color: #ff9800;      /* نارنجی هشدار */
+    --danger-color: #d32f2f;       /* قرمز خطر */
+    --light-color: #f4f6f9;        /* پس‌زمینه بسیار روشن */
+    --dark-color: #212529;         /* تیره برای متن */
+    --white-color: #ffffff;
+}
+
+/* 3. استایل‌های کلی و فونت */
+body {
+    font-family: 'Inter', 'Vazirmatn', sans-serif;
+    background-color: var(--light-color);
+    color: var(--dark-color);
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Vazirmatn', 'Inter', sans-serif;
+    font-weight: 600;
+}
+
+/* 4. استایل‌های نوار ناوبری (Navbar) */
+.navbar {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #5c6bc0 100%) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.navbar-brand {
+    color: var(--white-color) !important;
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+.navbar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.85) !important;
+    transition: all 0.3s ease;
+    border-radius: 0.5rem;
+    margin: 0 0.25rem;
+    font-weight: 500;
+}
+
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link.active {
+    color: var(--white-color) !important;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* 5. استایل‌های کارت‌ها (Cards) */
+.card {
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+    border-bottom: 1px solid #e3e6f0;
+    background-color: var(--white-color);
+    font-weight: 600;
+    border-radius: 0.75rem 0.75rem 0 0 !important;
+}
+
+/* 6. استایل‌های دکمه‌ها (Buttons) */
+.btn {
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    padding: 0.5rem 1rem;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #303f9f;
+    border-color: #303f9f;
+    transform: translateY(-1px);
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+.btn-info {
+    background-color: var(--info-color);
+    border-color: var(--info-color);
+}
+
+.btn-warning {
+    background-color: var(--warning-color);
+    border-color: var(--warning-color);
+    color: var(--dark-color);
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+}
+
+/* 7. استایل‌های جدول‌ها (Tables) */
+.table {
+    background-color: var(--white-color);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.table thead th {
+    border-bottom: 2px solid #e3e6f0;
+    font-weight: 600;
+    background-color: #f8f9fc;
+    color: var(--dark-color);
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* 8. استایل‌های فرم‌ها (Forms) */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(63, 81, 181, 0.25);
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 0.5rem;
+}
+
+/* 9. حل مشکل ز-ایندکس منوی کشویی */
+.dropdown-menu {
+    z-index: 9999; /* این خط مشکل را حل می‌کند */
+    border: none;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border-radius: 0.5rem;
+}
+
+.dropdown-item {
+    transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background-color: var(--light-color);
+    color: var(--primary-color);
+}
+
+/* 10. کلاس‌های کمکی رنگی برای کارت‌ها */
+.border-left-primary { border-left: 0.35rem solid var(--primary-color) !important; }
+.border-left-success { border-left: 0.35rem solid var(--success-color) !important; }
+.border-left-info { border-left: 0.35rem solid var(--info-color) !important; }
+.border-left-warning { border-left: 0.35rem solid var(--warning-color) !important; }
+
+/* 11. استایل برای فوتر */
+footer {
+    background-color: var(--dark-color) !important;
+    color: rgba(255, 255, 255, 0.8);
+    margin-top: auto;
+}
+footer a {
+    color: var(--white-color);
+    font-weight: 500;
+}
+/* استایل برای فیلدهای نامعتبر */
+.is-invalid {
+    border-color: var(--danger-color) !important;
+    box-shadow: 0 0 0 0.2rem rgba(211, 47, 47, 0.25) !important;
+}
+
+/* استایل برای چک‌باکس‌ها */
+.form-check {
+    margin-bottom: 0.5rem;
+    padding-right: 1.5rem;
+}
+
+.form-check-input {
+    margin-right: -1.5rem;
+}
+
+/* استایل برای لینک‌های قابل کلیک در جدول */
+.table a {
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.table a:hover {
+    text-decoration: underline;
+}
+/* استایل برای منابع اشغال شده */
+.badge.bg-danger {
+    padding: 0.5em 0.75em;
+    font-size: 0.75em;
+    transition: all 0.3s ease;
+}
+
+.badge.bg-danger:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 5px rgba(220, 53, 69, 0.3);
+}
+
+/* استایل برای کارت منابع اشغال شده */
+.card-info {
+    border-right: 4px solid #17a2b8;
+}
+
+/* استایل برای مودال */
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-title {
+    color: #495057;
+    font-weight: 600;
+}
+/* در static/css/style.css */
+.card-info {
+    border-right: 4px solid #17a2b8;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.badge.bg-danger {
+    padding: 0.5em 0.8em;
+    font-size: 0.75em;
+    transition: all 0.2s ease;
+}
+
+.badge.bg-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
+}
+
+/* برای حالت موبایل */
+@media (max-width: 991.98px) {
+    .col-lg-4 {
+        margin-bottom: 1rem;
+    }
+    
+    .card-info {
+        position: static !important;
+        max-height: none;
+    }
+}
+/* استایل برای فیلدهای غیرفعال */
+.form-control.disabled-field,
+.form-select.disabled-field,
+.form-control:disabled,
+.form-select:disabled {
+    background-color: #f8f9fa !important;
+    color: #6c757d !important;
+    border-color: #ced4da !important;
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* استایل برای فیلدهای فعال */
+.form-control:not(:disabled),
+.form-select:not(:disabled) {
+    background-color: white !important;
+    color: #495057 !important;
+    border-color: #ced4da !important;
+    opacity: 1;
+}
+/* طرح کارتی */
+/* طرح کارتی برای پرسنل شیفت - نسخه نهایی */
+.staff-card {
+    position: relative;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 8px;
+    margin-bottom: 4px;
+    transition: all 0.3s ease;
+    background: white;
+    cursor: pointer;
+    height: 100%;
+    min-height: 50px;
+}
+
+.staff-card:hover {
+    border-color: #007bff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+}
+
+.staff-card .staff-checkbox {
+    display: none;
+}
+
+.staff-label {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    cursor: pointer;
+    height: 100%;
+    text-align: right;
+    justify-content: flex-start;
+    flex-direction: row;
+}
+
+.staff-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+.staff-name {
+    font-weight: 600;
+    color: #495057;
+    font-size: 14px; /* فونت بزرگتر */
+    text-align: right;
+    line-height: 1.3;
+    flex: 1;
+}
+
+.staff-checkbox:checked + .staff-label .staff-card {
+    border-color: #28a745;
+    background: linear-gradient(135deg, #f8f9ff 0%, #e8f5e8 100%);
+}
+
+.staff-checkbox:checked + .staff-label .staff-avatar {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+/* استایل برای حالت خطا */
+.staff-error #shift_staff_container {
+    border: 2px solid #dc3545 !important;
+    border-radius: 8px;
+    padding: 8px;
+    background: #fff5f5;
+}
+
+/* برای نمایش 5 تایی در هر ردیف */
+@media (min-width: 1200px) {
+    .col-xl-2 {
+        flex: 0 0 20%;
+        max-width: 20%;
+    }
+}
+
+/* استایل برای فیلدهای غیرفعال */
+.form-control:disabled,
+.form-select:disabled {
+    background-color: #f8f9fa !important;
+    color: #6c757d !important;
+    border-color: #dee2e6 !important;
+    opacity: 0.7;
+}
+/* افکت درخشش برای تداخل منابع */
+.badge-conflict-glow {
+    animation: pulse-glow 1.5s infinite;
+}
+
+@keyframes pulse-glow {
+    0% {
+        box-shadow: 0 0 8px 2px rgba(255, 193, 7, 0.7);
+    }
+    50% {
+        box-shadow: 0 0 15px 5px rgba(255, 193, 7, 1);
+    }
+    100% {
+        box-shadow: 0 0 8px 2px rgba(255, 193, 7, 0.7);
+    }
+}
+/* Shift inspection status and dialog */
+.checklist-card { border: 1px solid #dbe5f2; border-right: 4px solid #3973be; animation: checklist-enter .3s ease-out; }
+.checklist-card .card-body { padding: 1rem 1.15rem; }
+.checklist-modal { border: 0; border-radius: 1rem; overflow: hidden; }
+.checklist-sidebar-sticky { position: sticky; top: 20px; }
+#checklistModal .modal-dialog { max-height: calc(100dvh - 2rem); margin-top: 1rem; margin-bottom: 1rem; }
+#checklistModal .modal-content { max-height: calc(100dvh - 2rem); display: flex; flex-direction: column; }
+#checklistModal .checklist-form-layout { min-height: 0; display: flex; flex-direction: column; flex: 1 1 auto; }
+#checklistModal .modal-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+#checklistModal .modal-footer { flex-shrink: 0; background: white; }
+@media (max-height: 550px) { #checklistModal .modal-dialog { align-items: flex-start; } }
+.checklist-modal .modal-header { background: #f3f7fc; }
+.checklist-item { background: #fff; transition: background-color .2s ease; }
+.checklist-item:hover { background: #f6f9fe; }
+.checklist-choice { display: inline-flex; align-items: center; gap: .25rem; padding: .35rem .65rem; border: 1px solid #d9e1ea; border-radius: .55rem; cursor: pointer; }
+.checklist-choice:has(input:checked) { background: #e9f2ff; border-color: #3973be; }
+@keyframes checklist-enter { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .checklist-card { animation: none; } }

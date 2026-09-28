@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}گزارش‌ها - سیستم جامع{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">گزارش‌گیری و خروجی</h1>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">فیلتر گزارش‌ها</h6>
+        </div>
+        <div class="card-body">
+            <div id="filter-area">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label for="start_date" class="form-label">از تاریخ</label>
+                        <input type="text" id="start_date" class="form-control jalali-datepicker" placeholder="تاریخ شروع" autocomplete="off">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="end_date" class="form-label">تا تاریخ</label>
+                        <input type="text" id="end_date" class="form-control jalali-datepicker" placeholder="تاریخ پایان" autocomplete="off">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="network" class="form-label">نام شبکه</label>
+                        <select id="network" class="form-select" multiple>
+                            <option value="">همه شبکه‌ها</option>
+                            {% for network in network_names %}
+                                <option value="{{ network }}">{{ network }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="activity" class="form-label">فعالیت</label>
+                        <select id="activity" class="form-select" multiple>
+                            <option value="">همه فعالیت‌ها</option>
+                            {% for activity in activities %}
+                                <option value="{{ activity }}">{{ activity }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12" style="text-align: right;">
+                        <button type="button" class="btn btn-primary ml-2 mb-2" id="btn-search">
+                            <i class="fas fa-search me-2"></i>جستجو
+                        </button>
+                        
+                        <button type="button" class="btn btn-secondary ml-2 mb-2" id="btn-clear">
+                            <i class="fas fa-eraser me-2"></i>پاک کردن
+                        </button>
+                        
+                        <button type="button" class="btn btn-success ml-2 mb-2" id="btn-excel">
+                            <i class="fas fa-file-excel me-2"></i>دانلود Excel
+                        </button>
+                        
+                        <button type="button" class="btn btn-danger mb-2" id="btn-pdf">
+                            <i class="fas fa-file-pdf me-2"></i>دانلود PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4" id="resultsCard" style="display: none;">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">نتایج جستجو</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped" width="100%" cellspacing="0" style="font-size: 0.9rem;">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ردیف</th>
+                            <th>تاریخ</th>
+                            <th>شیفت</th>
+                            <th>شبکه</th>
+                            <th>فعالیت</th>
+                            <th>زمان (شروع-پایان)</th>
+                            <th>مدت</th>
+                            <th>مسیر / خط</th>
+                            <th>عوامل (تحویل/دریافت)</th>
+                            <th>توضیحات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">آپلود فایل اکسل</h6>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('main.import_excel') }}" method="post" enctype="multipart/form-data">
+                <div class="input-group">
+                    <input type="file" class="form-control" name="excel_file" accept=".xlsx" required>
+                    <button class="btn btn-warning" type="submit">آپلود</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- دریافت دکمه‌ها ---
+    const btnSearch = document.getElementById('btn-search');
+    const btnClear = document.getElementById('btn-clear');
+    const btnExcel = document.getElementById('btn-excel');
+    const btnPdf = document.getElementById('btn-pdf');
+    const resultsCard = document.getElementById('resultsCard');
+    const resultsTableBody = document.getElementById('resultsTableBody');
+
+    // --- تابع دریافت پارامترها ---
+    function getParams() {
+        const networks = Array.from(document.querySelectorAll('#network option:checked')).map(o => o.value).filter(v => v);
+        const activities = Array.from(document.querySelectorAll('#activity option:checked')).map(o => o.value).filter(v => v);
+        const startDate = document.getElementById('start_date').value;
+        const endDate = document.getElementById('end_date').value;
+
+        const params = new URLSearchParams();
+        if (startDate) params.append('start_date', startDate);
+        if (endDate) params.append('end_date', endDate);
+        networks.forEach(n => params.append('network', n));
+        activities.forEach(a => params.append('activity', a));
+        return params;
+    }
+
+    // --- تابع مدیریت وضعیت دکمه ---
+    function setButtonLoading(button, isLoading) {
+        if (isLoading) {
+            button.dataset.originalHtml = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال دریافت...';
+            button.disabled = true;
+        } else {
+            if (button.dataset.originalHtml) {
+                button.innerHTML = button.dataset.originalHtml;
+            }
+            button.disabled = false;
+        }
+    }
+
+    // --- تابع جستجو (AJAX) ---
+    function applyFilter() {
+        const params = getParams();
+        const url = "{{ url_for('main.api_filter_reports') }}" + '?' + params.toString();
+
+        setButtonLoading(btnSearch, true);
+
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                resultsTableBody.innerHTML = '';
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                if (data.length === 0) {
+                    resultsTableBody.innerHTML = '<tr><td colspan="10" class="text-center text-muted p-3">موردی یافت نشد</td></tr>';
+                } else {
+                    // مرتب‌سازی نزولی
+                    data.sort((a, b) => (b.row_number || 0) - (a.row_number || 0));
+                    resultsTableBody.innerHTML = data.map(r => `
+                        <tr>
+                            <td>${r.row_number}</td>
+                            <td>${r.date}</td>
+                            <td>${r.shift}</td>
+                            <td class="fw-bold text-primary">${r.network_name}</td>
+                            <td>${r.activity}</td>
+                            <td>${r.start_time || '-'} <br> <small class="text-muted">تا</small> <br> ${r.end_time || '-'}</td>
+                            <td>${r.duration || '-'}</td>
+                            <td><small>${r.via_method || '-'}</small></td>
+                            <td><small>د: ${r.deliverer || '-'}<br>گ: ${r.receiver || '-'}</small></td>
+                            <td><small>${r.description || r.comments || '-'}</small></td>
+                        </tr>
+                    `).join('');
+                }
+                resultsCard.style.display = 'block';
+            })
+            .catch(err => {
+                console.error(err);
+                alert("خطا در ارتباط با سرور");
+            })
+            .finally(() => {
+                setButtonLoading(btnSearch, false);
+            });
+    }
+
+    // --- تابع دانلود مستقیم ---
+    function directDownload(type, button) {
+        const params = getParams();
+        const baseUrl = type === 'excel' ? "{{ url_for('main.export_excel') }}" : "{{ url_for('main.export_pdf') }}";
+        const finalUrl = baseUrl + '?' + params.toString();
+
+        setButtonLoading(button, true);
+        
+        // هدایت مستقیم مرورگر (جلوگیری از دانلود تکراری)
+        window.location.href = finalUrl;
+
+        // بازگرداندن دکمه بعد از 5 ثانیه
+        setTimeout(() => {
+            setButtonLoading(button, false);
+        }, 5000);
+    }
+
+    // --- رویدادها ---
+
+    btnSearch.addEventListener('click', function(e) {
+        e.preventDefault();
+        applyFilter();
+    });
+
+    btnClear.addEventListener('click', function(e) {
+        e.preventDefault();
+        location.reload();
+    });
+
+    btnExcel.addEventListener('click', function(e) {
+        e.preventDefault();
+        directDownload('excel', this);
+    });
+
+    btnPdf.addEventListener('click', function(e) {
+        e.preventDefault();
+        directDownload('pdf', this);
+    });
+
+    if ($(".jalali-datepicker").length > 0) {
+        $(".jalali-datepicker").persianDatepicker({ format: 'YYYY/MM/DD', autoClose: true, initialValue: false });
+    }
+});
+</script>
+{% endblock %}

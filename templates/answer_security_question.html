@@ -1,0 +1,50 @@
+<!-- templates/answer_security_question.html -->
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>پاسخ به سوال امنیتی</title>
+    <link rel="stylesheet" href="https://cdn.rtlcss.com/bootstrap/v4.5.3/css/bootstrap.min.css">
+    <style>
+        body { font-family: 'Vazirmatn', sans-serif; background-color: #f8f9fa; }
+        .container { max-width: 600px; margin-top: 50px; }
+        .card { border-radius: 15px; }
+        .btn-primary { background-color: #007bff; border-color: #007bff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title text-center mb-4">بازیابی رمز عبور</h3>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">{{ message }}<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                <form method="POST">
+                    <div class="form-group">
+                        <label for="question_display">سوال امنیتی شما:</label>
+                        <input type="text" id="question_display" class="form-control" value="{{ user.security_question }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="security_answer">پاسخ:</label>
+                        <input type="text" name="security_answer" id="security_answer" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new_password">رمز عبور جدید:</label>
+                        <input type="password" name="new_password" id="new_password" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm_password">تکرار رمز عبور جدید:</label>
+                        <input type="password" name="confirm_password" id="confirm_password" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">بازنشانی رمز عبور</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

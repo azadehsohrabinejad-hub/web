@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}سیستم جامع مدیریت شیفت{% endblock %}</title>
+    
+    <!-- کتابخانه‌های آفلاین -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-5.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-icons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome-6.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/icons-fallback.css') }}">
+    <link href="{{ url_for('static', filename='css/persian-datepicker.min.css') }}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body class="d-flex flex-column min-vh-100">
+    
+    {% if current_user.is_authenticated %}
+    <!-- اضافه شدن z-index برای جلوگیری از پنهان شدن منو زیر سایر اجزا -->
+    <nav class="navbar navbar-expand-lg navbar-dark" style="z-index: 1050;">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('main.form') }}">
+                <i class="fas fa-chart-line me-2"></i>
+                سیستم جامع مدیریت شیفت
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.form') }}">
+                            <i class="fas fa-plus-circle me-1"></i> ثبت اطلاعات
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.records') }}">
+                            <i class="fas fa-list me-1"></i> لیست اطلاعات
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.dashboard') }}">
+                            <i class="fas fa-tachometer-alt me-1"></i> داشبورد
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.reports') }}">
+                            <i class="fas fa-chart-bar me-1"></i> گزارش‌ها
+                        </a>
+                    </li>
+                    {% if current_user.is_admin %}
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="{{ url_for('main.admin_lists') }}">
+                            <i class="fas fa-list-alt"></i> مدیریت لیست‌ها
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+                
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user me-1"></i> {{ current_user.username }}
+                        </a>
+                        <!-- تغییر start به end برای باز شدن صحیح منو در سایت های RTL -->
+                        <ul class="dropdown-menu dropdown-menu-start">
+                            <li><a class="dropdown-item" href="{{ url_for('main.change_password') }}">
+                                <i class="fas fa-key me-1"></i> تغییر رمز عبور
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.about') }}">
+                                <i class="fas fa-info-circle me-1"></i> درباره برنامه
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{{ url_for('main.logout') }}">
+                                <i class="fas fa-sign-out-alt me-1"></i> خروج
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+    
+    <main class="container-fluid py-4 flex-grow-1">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- فوتر -->
+    <footer class="text-center p-3 mt-auto">
+        © {{ now.year }} سیستم جامع مدیریت شیفت |
+        <a href="{{ url_for('main.about') }}" class="text-decoration-none">درباره برنامه</a>
+    </footer>
+    
+    <!-- Bootstrap JS -->
+    <script src="{{ url_for('static', filename='js/bootstrap-5.bundle.min.js') }}"></script>
+    <!-- کتابخانه تاریخ شمسی -->
+    <script src="{{ url_for('static', filename='js/persian-datepicker.min.js') }}"></script>
+    
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    {% block scripts %}{% endblock %}
+    
+    <!-- تایمر عدم فعالیت (بدون هیچ کد اضافه ای که باعث تداخل شود) -->
+    <script>
+    let inactivityTimer;
+    function resetTimer() {
+        clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(function() {
+            alert('به دلیل عدم فعالیت، شما از سیستم خارج شدید.');
+            window.location.href = "{{ url_for('main.logout') }}";
+        }, 900000); // 15 دقیقه
+    }
+    document.addEventListener('mousemove', resetTimer);
+    document.addEventListener('keypress', resetTimer);
+    document.addEventListener('scroll', resetTimer);
+    document.addEventListener('click', resetTimer);
+    resetTimer();
+    </script>
+</body>
+</html>

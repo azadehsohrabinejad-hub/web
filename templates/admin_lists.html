@@ -1,0 +1,277 @@
+{% extends "base.html" %} <!-- اگر.base.html ندارید این خط را پاک کنید -->
+
+{% block content %}
+<div class="container mt-4">
+    <h2>مدیریت لیست‌های سیستم</h2>
+    <!-- =============================== -->
+<!-- مدیریت کاربران -->
+<!-- =============================== -->
+
+<div class="card mb-4 shadow-sm">
+
+    <div class="card-header bg-dark text-white">
+
+        <strong>
+            مدیریت نقش کاربران
+        </strong>
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="table-responsive">
+
+            <table class="table table-bordered table-hover align-middle">
+
+                <thead class="table-light">
+
+                    <tr>
+
+                        <th>
+                            نام کاربری
+                        </th>
+
+                        <th>
+                            نقش فعلی
+                        </th>
+
+                        <th>
+                            عملیات
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for user in users %}
+
+                    <tr>
+
+                        <td>
+
+                            <strong>
+                                {{ user.username }}
+                            </strong>
+
+                            {% if user.username|lower == 'admin' %}
+
+                            <span class="badge bg-danger ms-2">
+                                ادمین اصلی
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if user.is_admin %}
+
+                            <span class="badge bg-success">
+                                Admin
+                            </span>
+
+                            {% else %}
+
+                            <span class="badge bg-secondary">
+                                User
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if user.username|lower == 'admin' %}
+
+                                <span class="text-muted">
+                                    غیرقابل تغییر
+                                </span>
+
+                            {% else %}
+
+                                <form
+                                    action="{{ url_for(
+                                        'main.admin_user_toggle_role',
+                                        user_id=user.id
+                                    ) }}"
+                                    method="POST"
+                                    style="display:inline;"
+                                >
+
+                                    {% if user.is_admin %}
+
+                                    <button
+                                        type="submit"
+                                        class="btn btn-warning btn-sm"
+                                        onclick="return confirm(
+                                            'آیا می‌خواهید این ادمین به کاربر عادی تبدیل شود؟'
+                                        )"
+                                    >
+                                        تبدیل به User
+                                    </button>
+
+                                    {% else %}
+
+                                    <button
+                                        type="submit"
+                                        class="btn btn-success btn-sm"
+                                        onclick="return confirm(
+                                            'آیا می‌خواهید این کاربر ادمین شود؟'
+                                        )"
+                                    >
+                                        تبدیل به Admin
+                                    </button>
+
+                                    {% endif %}
+
+                                </form>
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+    <div class="row">
+        
+        <!-- بخش شبکه‌ها -->
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">شبکه‌ها</div>
+                <div class="card-body">
+                    <form action="{{ url_for('main.admin_networks_add') }}" method="POST" class="mb-3">
+                        <div class="input-group">
+                            <input type="text" name="name" class="form-control" placeholder="نام شبکه جدید" required>
+                            <button type="submit" class="btn btn-success">افزودن</button>
+                        </div>
+                    </form>
+                    <ul class="list-group">
+                        {% for network in networks %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ network.name }}
+                            <form action="{{ url_for('main.admin_networks_delete', item_id=network.id) }}" method="POST" style="display: inline;">
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('آیا مطمئن هستید؟')">حذف</button>
+                            </form>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- بخش پرسنل -->
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">پرسنل</div>
+                <div class="card-body">
+                    <form action="{{ url_for('main.admin_staff_add') }}" method="POST" class="mb-3">
+                        <div class="input-group">
+                            <input type="text" name="name" class="form-control" placeholder="نام پرسنل جدید" required>
+                            <button type="submit" class="btn btn-success">افزودن</button>
+                        </div>
+                    </form>
+                    <ul class="list-group">
+                        {% for s in staff %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ s.name }}
+                            <!-- 🔴 دکمه حذف پرسنل که قبلاً جا افتاده بود -->
+                            <form action="{{ url_for('main.admin_staff_delete', item_id=s.id) }}" method="POST" style="display: inline;">
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('آیا مطمئن هستید؟')">حذف</button>
+                            </form>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- بخش فعالیت‌ها -->
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">فعالیت‌ها</div>
+                <div class="card-body">
+                    {% set field_labels = {
+                        'network_name': 'نام شبکه', 'location': 'لوکیشن',
+                        'deliverer': 'تحویل‌دهنده', 'receiver': 'تحویل‌گیرنده',
+                        'via_method': 'روش ارتباطی', 'transmission_line': 'خط ارسالی',
+                        'signal_time': 'ساعت دریافت سیگنال', 'start_time': 'ساعت شروع',
+                        'end_time': 'ساعت پایان'
+                    } %}
+                    <form action="{{ url_for('main.admin_activities_add') }}" method="POST" class="mb-4 border rounded p-3 bg-light">
+                        <div class="input-group mb-2">
+                            <input type="text" name="name" class="form-control" placeholder="نام فعالیت جدید" required>
+                        </div>
+                        <p class="small text-muted mb-2">برای هر فیلد مشخص کنید فعال باشد و در صورت نیاز الزامی هم باشد.</p>
+                        <div class="row g-2 mb-3">
+                            {% for key, label in field_labels.items() %}
+                            <div class="col-md-4">
+                                <div class="border rounded p-2 bg-white">
+                                    <div class="fw-bold mb-1">{{ label }}</div>
+                                    <label class="me-3"><input type="checkbox" name="enabled_fields" value="{{ key }}" checked> فعال</label>
+                                    <label><input type="checkbox" name="required_fields" value="{{ key }}"> الزامی</label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <button type="submit" class="btn btn-success btn-block w-100">افزودن فعالیت</button>
+                    </form>
+                    <div class="accordion" id="activitiesAccordion">
+                        {% for act in activities %}
+                        {% set enabled = act.get_enabled_fields() %}
+                        {% set required = act.get_required_fields() %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading{{ act.id }}">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#activity{{ act.id }}">
+                                    {{ act.name }}
+                                    <span class="badge bg-primary mx-2">{{ enabled|length }} فیلد فعال</span>
+                                    <span class="badge bg-danger">{{ required|length }} الزامی</span>
+                                </button>
+                            </h2>
+                            <div id="activity{{ act.id }}" class="accordion-collapse collapse" data-bs-parent="#activitiesAccordion">
+                                <div class="accordion-body">
+                                    <form action="{{ url_for('main.admin_activities_update', item_id=act.id) }}" method="POST">
+                                        <div class="row g-2">
+                                            {% for key, label in field_labels.items() %}
+                                            <div class="col-md-4">
+                                                <div class="border rounded p-2">
+                                                    <div class="fw-bold mb-1">{{ label }}</div>
+                                                    <label class="me-3"><input type="checkbox" name="enabled_fields" value="{{ key }}" {% if key in enabled %}checked{% endif %}> فعال</label>
+                                                    <label><input type="checkbox" name="required_fields" value="{{ key }}" {% if key in required %}checked{% endif %}> الزامی</label>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        <button type="submit" class="btn btn-primary mt-3">ذخیره تنظیمات</button>
+                                    </form>
+                                    <form action="{{ url_for('main.admin_activities_delete', item_id=act.id) }}" method="POST" class="mt-2">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('آیا مطمئن هستید؟')">حذف فعالیت</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
