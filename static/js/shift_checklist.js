@@ -2,6 +2,8 @@
   'use strict';
   const config = JSON.parse(document.getElementById('checklistConfig').textContent);
   const badge = document.getElementById('checklistBadge');
+  const card = document.getElementById('checklistCard');
+  const reminder = document.getElementById('checklistReminder');
   const summary = document.getElementById('checklistSummary');
   const shiftLabel = document.getElementById('checklistShift');
   const modalLabel = document.getElementById('checklistModalShift');
@@ -22,6 +24,30 @@
   const managePortal = document.getElementById('checklistManageModal');
   if (managePortal) document.body.appendChild(managePortal);
   let current = null;
+  let renderedAnswerLabels = null;
+  let statusReceivedAt = 0;
+  let boundaryRefreshRequested = false;
+
+  function updateReminder() {
+    if (!current) return;
+    const remaining = Number(current.seconds_remaining) - (performance.now() - statusReceivedAt) / 1000;
+    const urgent = !current.completed && remaining > 0 && remaining <= 600;
+    card.classList.toggle('checklist-pending', !current.completed);
+    card.classList.toggle('checklist-urgent', urgent);
+    card.classList.toggle('checklist-complete', Boolean(current.completed));
+    if (!current.completed) {
+      badge.className = urgent ? 'badge bg-danger' : 'badge bg-warning text-dark';
+      badge.textContent = urgent ? 'نیاز به تکمیل' : 'ثبت نشده';
+    }
+    reminder.classList.toggle('d-none', Boolean(current.completed));
+    const message = urgent ? 'کمتر از ۱۰ دقیقه تا پایان شیفت؛ لطفاً بازدید را تکمیل کنید.' :
+      remaining <= 0 ? 'شیفت تغییر کرده است؛ در حال دریافت وضعیت جدید…' : 'لطفاً بازدید این شیفت را تکمیل کنید.';
+    if (reminder.textContent !== message) reminder.textContent = message;
+    if (remaining <= 0 && !boundaryRefreshRequested) {
+      boundaryRefreshRequested = true;
+      refresh();
+    }
+  }
 
   if (config.manageUrl) {
     const manageModal = document.getElementById('checklistManageModal');
@@ -73,6 +99,7 @@
     progress.textContent = `${items.querySelectorAll('input[type=radio]:checked').length} از ${current.items.length} مورد پاسخ داده شد`;
   }
   function renderItems(list) {
+    renderedAnswerLabels = current.answer_labels || {ok: "سالم", issue: "مشکل دارد", unknown: "قابل بررسی نبود"};
     items.replaceChildren();
     list.forEach((item, index) => {
       const row = document.createElement('div');
@@ -83,7 +110,7 @@
       row.append(title);
       const choices = document.createElement('div');
       choices.className = 'd-flex flex-wrap gap-2';
-      [['ok', 'سالم'], ['issue', 'مشکل دارد'], ['unknown', 'قابل بررسی نبود']].forEach(([value, label]) => {
+      Object.entries(renderedAnswerLabels).forEach(([value, label]) => {
         const wrapper = document.createElement('label');
         wrapper.className = 'checklist-choice';
         const radio = document.createElement('input');
@@ -103,9 +130,12 @@
   }
   function render(data) {
     const changed = !current || current.shift_start !== data.shift_start;
+    const wasCompleted = Boolean(current?.completed);
     if (changed && modal.classList.contains('show')) bootstrap.Modal.getInstance(modal)?.hide();
-    const itemsChanged = current && JSON.stringify(current.items) !== JSON.stringify(data.items);
+    const itemsChanged = current && (JSON.stringify(current.items) !== JSON.stringify(data.items) || JSON.stringify(current.answer_labels) !== JSON.stringify(data.answer_labels));
     current = data;
+    statusReceivedAt = performance.now();
+    boundaryRefreshRequested = false;
     shiftLabel.textContent = `شیفت ${data.shift_name} · ${data.shift_date}`;
     modalLabel.textContent = shiftLabel.textContent;
     if (data.completed) {
@@ -121,8 +151,9 @@
       summary.textContent = 'بازدید این شیفت هنوز ثبت نشده است.';
       open.classList.remove('d-none');
       actions.classList.add('d-none'); resetForm.classList.add('d-none');
-      if (changed || (itemsChanged && !modal.classList.contains('show'))) { form.reset(); renderItems(data.items); }
+      if (changed || wasCompleted || (itemsChanged && !modal.classList.contains('show'))) { form.reset(); renderItems(data.items); }
     }
+    updateReminder();
   }
   async function refresh() {
     try {
@@ -150,7 +181,7 @@
     try {
       const response = await fetch(config.url, {
         method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({token: config.token, shift_start: current.shift_start, answers,
+        body: JSON.stringify({token: config.token, shift_start: current.shift_start, answer_labels: renderedAnswerLabels, answers,
           temperature, notes: document.getElementById('checklistNotes').value})
       });
       const result = await response.json();
@@ -162,5 +193,6 @@
   });
   refresh();
   setInterval(refresh, 30000);
+  setInterval(updateReminder, 1000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
 })();

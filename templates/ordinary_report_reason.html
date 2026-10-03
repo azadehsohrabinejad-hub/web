@@ -1,0 +1,4 @@
+{% extends 'base.html' %}{% block title %}ثبت علت تغییر{% endblock %}{% block content %}
+<h1 class="h4">ابتدا دلیل تغییر گزارش را ثبت کنید</h1><p>ردیف {{ record.row_number }} | {{ record.date }} | {{ record.network_name or '' }} | {{ record.activity }}</p>
+<form method="post" class="card card-body"><input type="hidden" name="token" value="{{ token }}"><label class="form-label">نوع تغییر<select class="form-select" name="action"><option value="edit">ویرایش گزارش</option><option value="delete">حذف گزارش</option></select></label><label class="form-label">دلیل (الزامی)<textarea name="reason" class="form-control" rows="3" maxlength="500" required placeholder="دلیل اصلاح یا حذف این گزارش را بنویسید"></textarea></label><div class="d-flex gap-2"><button class="btn btn-primary">ثبت دلیل و ادامه</button><a class="btn btn-outline-secondary" href="{{ url_for('main.ordinary_report_picker') }}">انصراف</a></div></form>
+{% endblock %}

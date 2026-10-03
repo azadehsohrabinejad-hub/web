@@ -51,7 +51,9 @@
                             <i class="fas fa-chart-bar me-1"></i> گزارش‌ها
                         </a>
                     </li>
-                    {% if current_user.is_admin %}
+                    
+{% if current_user.is_admin %}
+                    <li class="nav-item"><a class="nav-link text-warning" href="{{ url_for('main.assigned_checklist_admin') }}"><i class="fas fa-clipboard-check me-1"></i> چک‌لیست‌های اختصاصی</a></li>
                     <li class="nav-item">
                         <a class="nav-link text-warning" href="{{ url_for('main.admin_lists') }}">
                             <i class="fas fa-list-alt"></i> مدیریت لیست‌ها
@@ -119,19 +121,32 @@
     
     <!-- تایمر عدم فعالیت (بدون هیچ کد اضافه ای که باعث تداخل شود) -->
     <script>
+    // Two hours since the last user action; background API polling is not activity.
+    const inactivityLimitMs = 2 * 60 * 60 * 1000;
+    let lastUserActivity = Date.now();
     let inactivityTimer;
-    function resetTimer() {
-        clearTimeout(inactivityTimer);
-        inactivityTimer = setTimeout(function() {
-            alert('به دلیل عدم فعالیت، شما از سیستم خارج شدید.');
+    function checkInactivity() {
+        const remaining = inactivityLimitMs - (Date.now() - lastUserActivity);
+        if (remaining <= 0) {
             window.location.href = "{{ url_for('main.logout') }}";
-        }, 900000); // 15 دقیقه
+            return;
+        }
+        clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(checkInactivity, remaining);
     }
-    document.addEventListener('mousemove', resetTimer);
-    document.addEventListener('keypress', resetTimer);
-    document.addEventListener('scroll', resetTimer);
-    document.addEventListener('click', resetTimer);
-    resetTimer();
+    function resetTimer() {
+        if (Date.now() - lastUserActivity >= inactivityLimitMs) {
+            checkInactivity(); return;
+        }
+        lastUserActivity = Date.now();
+        checkInactivity();
+    }
+    ['mousemove', 'keydown', 'scroll', 'click', 'touchstart'].forEach(event =>
+        document.addEventListener(event, resetTimer, {passive:true}));
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) checkInactivity();
+    });
+    checkInactivity();
     </script>
 </body>
 </html>

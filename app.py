@@ -148,6 +148,8 @@ def create_app(instance_path=None):
     login_manager.login_message = 'لطفاً ابتدا وارد شوید'
     login_manager.login_category = 'warning'
     login_manager.init_app(app)
+    from datetime import timedelta as _assigned_timedelta
+    app.config['PERMANENT_SESSION_LIFETIME'] = _assigned_timedelta(hours=2)
 
     @login_manager.user_loader
     def load_user(user_id):

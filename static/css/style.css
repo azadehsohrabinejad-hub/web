@@ -465,6 +465,13 @@ footer a {
 /* Shift inspection status and dialog */
 .checklist-card { border: 1px solid #dbe5f2; border-right: 4px solid #3973be; animation: checklist-enter .3s ease-out; }
 .checklist-card .card-body { padding: 1rem 1.15rem; }
+.checklist-card.checklist-pending { background: #fff8d9; border-color: #e6b843; border-right-color: #d49b00; }
+.checklist-card.checklist-urgent { background: #ffe8e8; border-color: #c93636; border-right-color: #c93636; animation: checklist-alert 2s ease-in-out infinite; }
+.checklist-card.checklist-complete { background: #fff; border-color: #dbe5f2; border-right-color: #2b8a57; animation: none; }
+.checklist-urgent #checklistReminder { color: #a91c1c; }
+.checklist-pending:not(.checklist-urgent) #checklistReminder { color: #795900; }
+@keyframes checklist-alert { 0%, 100% { background-color: #ffe8e8; box-shadow: 0 0 0 0 rgba(201,54,54,.15); } 50% { background-color: #ffcaca; box-shadow: 0 0 0 5px rgba(201,54,54,.2); } }
+@media (prefers-reduced-motion: reduce) { .checklist-card.checklist-urgent { animation: none; background: #ffcaca; } }
 .checklist-modal { border: 0; border-radius: 1rem; overflow: hidden; }
 .checklist-sidebar-sticky { position: sticky; top: 20px; }
 #checklistModal .modal-dialog { max-height: calc(100dvh - 2rem); margin-top: 1rem; margin-bottom: 1rem; }

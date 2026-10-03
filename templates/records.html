@@ -3,6 +3,7 @@
 {% block title %}لیست اطلاعات - سیستم جامع گزارش گیری{% endblock %}
 
 {% block content %}
+
 <div class="container-fluid">
     <!-- فرم فیلترها به این صفحه اضافه شده -->
     <div class="card shadow mb-4">
@@ -183,7 +184,7 @@
                         {{ answers | selectattr('status', 'equalto', 'issue') | list | length }} مشکل‌دار،
                         {{ answers | selectattr('status', 'equalto', 'unknown') | list | length }} بررسی‌نشده</td>
                     <td><details><summary class="btn btn-sm btn-outline-primary">{% if current_user.is_admin or current_user.username == inspection.created_by %}مشاهده، ویرایش و بازنشانی{% else %}مشاهده{% endif %}</summary>
-                        <ul class="mt-2 mb-1">{% for answer in answers %}<li>{{ answer.label }}: {{ answer_labels[answer.status] }}{% if answer.note %} — {{ answer.note }}{% endif %}</li>{% endfor %}</ul>
+                        <ul class="mt-2 mb-1">{% for answer in answers %}<li>{{ answer.label }}: {{ answer.status_label | default(answer_labels[answer.status]) }}{% if answer.note %} — {{ answer.note }}{% endif %}</li>{% endfor %}</ul>
                         {% if inspection.notes %}<p class="small">توضیحات: {{ inspection.notes }}</p>{% endif %}
                         {% if current_user.is_admin or current_user.username == inspection.created_by %}
                         <form method="post" action="{{ url_for('main.admin_shift_checklist', record_id=inspection.id) }}" class="border rounded p-3 mt-2">
@@ -260,7 +261,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p id="fullDescriptionText" style="white-space: pre-wrap;"></p>
+                
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
@@ -383,4 +384,5 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+{% include '_assigned_checklist_records.html' %}
 {% endblock %}

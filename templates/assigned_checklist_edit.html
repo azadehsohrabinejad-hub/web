@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}ویرایش چک‌لیست{% endblock %}
+{% block content %}
+<h1 class="h4">ویرایش یا حذف {{ record.title }}</h1><p>{{ record.date_label }} | شیفت {{ record.shift_name }} | ثبت‌کننده {{ record.created_by }}</p>
+<form method="post" class="card card-body mb-4"><input type="hidden" name="token" value="{{ token }}"><input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="action" value="edit">
+{% for a in record.answers %}<div class="border rounded p-3 mb-2"><label class="form-label w-100">{{ loop.index }}. {{ a.label }}<select class="form-select" name="status_{{ a.id }}" required>{% for key,label in labels.items() %}<option value="{{ key }}" {% if key==a.status %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><input class="form-control" name="note_{{ a.id }}" value="{{ a.note }}" maxlength="500" placeholder="شرح مشکل (برای پاسخ مشکل‌دار الزامی)"></div>{% endfor %}
+<label class="form-label">دمای سرور (°C)<input class="form-control" type="number" step="any" min="-100" max="150" name="temperature" value="{{ record.temperature if record.temperature is not none else '' }}" {% if record.temperature is not none %}required{% endif %}></label>
+<label class="form-label">توضیحات<textarea class="form-control" name="notes" maxlength="1000">{{ record.notes }}</textarea></label>
+<label class="form-label">علت ویرایش (الزامی)<textarea class="form-control" name="reason" maxlength="500" required></textarea></label><div class="d-flex gap-2"><button class="btn btn-primary">ثبت ویرایش</button><a class="btn btn-outline-secondary" href="{{ url_for('main.assigned_checklist_archive') }}">انصراف</a></div></form>
+<form method="post" class="card card-body border-danger" onsubmit="return confirm('گزارش حذف شود؟ نسخهٔ قبلی در بایگانی محفوظ می‌ماند و ثبت مجدد این شیفت امکان‌پذیر می‌شود.')"><input type="hidden" name="token" value="{{ token }}"><input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="action" value="delete"><h2 class="h6">حذف گزارش و باز کردن امکان ثبت مجدد</h2><label class="form-label">علت حذف (الزامی)<textarea class="form-control" name="reason" maxlength="500" required></textarea></label><button class="btn btn-danger align-self-start">حذف با ثبت سابقه</button></form>
+{% endblock %}

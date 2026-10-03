@@ -193,9 +193,9 @@ def checklist_message(record, heading='بازدید شیفت', reason=None):
     lines = [f'{heading} {record.shift_name} | {date_label}',
              f'ثبت: {record.created_at:%H:%M} | {record.created_by}',
              f'دمای سرور: {record.temperature:g} °C',
-             f"سالم: {counts['ok']} | مشکل‌دار: {counts['issue']} | بررسی‌نشده: {counts['unknown']}",
+             ' | '.join(f"{next((a.get('status_label', ANSWER_LABELS[key]) for a in answers if a['status'] == key), _assigned_response_labels(0)[key])}: {counts[key]}" for key in ANSWER_LABELS),
              'جزئیات موارد:']
-    lines.extend(f"• {a['label']}: {ANSWER_LABELS.get(a['status'], a['status'])}" +
+    lines.extend(f"{ {'ok': '✅', 'issue': '❌', 'unknown': '🟡'}.get(a['status'], '🟡') } {a['label']}: {a.get('status_label', ANSWER_LABELS.get(a['status'], a['status']))}" +
                  (f" — {a['note']}" if a.get('note') else '') for a in answers)
     if record.notes:
         lines.append('توضیحات: ' + record.notes)
@@ -239,6 +239,7 @@ def admin_shift_checklist(record_id):
                 flash('وضعیت یا توضیح یکی از موارد نامعتبر است.', 'danger')
                 return redirect(url_for('main.records') + '#shift-inspections')
             item['status'], item['note'] = status, note
+            item['status_label'] = _assigned_response_labels(0)[status]
         try:
             temperature = float(request.form.get('temperature', '').replace('٫', '.'))
         except ValueError:
@@ -300,11 +301,13 @@ def manage_shift_checklist():
 @main_bp.route('/api/shift-checklist', methods=['GET'])
 @login_required
 def shift_checklist_status():
-    shift_start, shift_name = current_checklist_shift()
+    server_now = datetime.now()
+    shift_start, shift_name = current_checklist_shift(server_now)
     record = ShiftChecklist.query.filter_by(shift_start=shift_start).first()
     return jsonify(shift_start=shift_start.isoformat(), shift_name=shift_name,
+                   seconds_remaining=max(0, ((shift_start + timedelta(hours=8)) - server_now).total_seconds()),
                    shift_date=jdatetime.date.fromgregorian(date=shift_start.date()).strftime('%Y/%m/%d'),
-                   items=active_checklist_items(), can_manage=bool(record and (current_user.is_admin or record.created_by == current_user.username)),
+                   answer_labels=_assigned_response_labels(0), items=active_checklist_items(), can_manage=bool(record and (current_user.is_admin or record.created_by == current_user.username)),
                    completed=checklist_payload(record) if record else None)
 
 @main_bp.route('/api/shift-checklist', methods=['POST'])
@@ -318,6 +321,8 @@ def save_shift_checklist():
         return jsonify(error='شیفت تغییر کرده است؛ وضعیت جدید را بارگذاری کنید.'), 409
     if ShiftChecklist.query.filter_by(shift_start=shift_start).first():
         return jsonify(error='چک‌لیست این شیفت قبلاً ثبت شده است.'), 409
+    if data.get('answer_labels') is not None and data['answer_labels'] != _assigned_response_labels(0):
+        return jsonify(error='پاسخ‌ها تغییر کرده‌اند؛ صفحه را تازه‌سازی کنید.'), 409
     submitted = data.get('answers')
     expected = {item['id']: item for item in active_checklist_items()}
     if not isinstance(submitted, dict) or set(submitted) != set(expected):
@@ -330,7 +335,7 @@ def save_shift_checklist():
         note = str(answer.get('note', '')).strip()
         if len(note) > 500 or (answer['status'] == 'issue' and not note):
             return jsonify(error='برای هر مورد مشکل‌دار، توضیح کوتاه لازم است.'), 400
-        answers.append({'id': item_id, 'label': item['label'], 'status': answer['status'], 'note': note})
+        answers.append({'id': item_id, 'label': item['label'], 'status': answer['status'], 'status_label': _assigned_response_labels(0)[answer['status']], 'note': note})
     try:
         temperature = float(str(data.get('temperature', '')).replace('٫', '.'))
     except (ValueError, TypeError):
@@ -913,7 +918,7 @@ def records():
     if not session.get('checklist_token'):
         session['checklist_token'] = secrets.token_urlsafe(32)
     return render_template('records.html', records=records, network_names=network_names,
-                           activities=activities, inspections=inspections, answer_labels=ANSWER_LABELS,
+                           activities=activities, inspections=inspections, answer_labels=_assigned_response_labels(0),
                            json_loads=json.loads, checklist_revision=checklist_revision,
                            checklist_token=session['checklist_token'], current_shift_start=current_checklist_shift()[0])
 
@@ -1844,3 +1849,11 @@ def test_bale_direct():
         flash(f"خطایی در تست مستقیم رخ داد: {e}", "danger")
     return redirect(url_for('main.dashboard'))
 
+
+# User-assigned shift inspections
+from assigned_checklists import register_assigned_checklists, response_labels as _assigned_response_labels
+register_assigned_checklists(main_bp)
+
+
+from checklist_excel_reports import register_checklist_excel_reports
+register_checklist_excel_reports(main_bp)

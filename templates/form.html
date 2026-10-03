@@ -56,6 +56,7 @@
                 </div>
             </div>
             {% include '_shift_checklist.html' %}
+            {% include '_assigned_checklists.html' %}
           </div>
         </div>
 
@@ -229,6 +230,7 @@
                                     در حال ثبت، لطفاً صبر کنید...
                                 </span>
                             </button>
+                            
                             <button type="button" class="btn btn-info" onclick="copyLastReport()">
                                 <i class="fas fa-copy me-2"></i> کپی از گزارش قبلی
                             </button>
@@ -248,7 +250,9 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/shift_checklist.js', v='5') }}"></script>
+<script src="{{ url_for('static', filename='js/checklist_bulk.js', v='1') }}"></script>
+<script src="{{ url_for('static', filename='js/assigned_checklists.js', v='2') }}"></script>
+<script src="{{ url_for('static', filename='js/shift_checklist.js', v='8') }}"></script>
 <script>
 // --- توابع کمکی ---
 
