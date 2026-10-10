@@ -113,3 +113,34 @@ app_broken.py
 /create_admin.py
 /create_users.py
 /init_db.py
+
+# Local secrets and databases
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite3-*
+
+# Python environments
+venv/
+.venv/
+build-venv/
+__pycache__/
+*.pyc
+
+# Runtime and local backups
+logs/
+*.log
+backups/
+backup_admin_fix/
+*.bak
+*.bak_*
+*.zip
+
+# Build outputs
+build/
+dist/
+*.spec

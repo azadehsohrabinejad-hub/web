@@ -231,7 +231,7 @@ def register_assigned_checklists(bp):
                 'temperature_required': d.temperature_required, 'answer_labels': response_labels(d.id),
                 'manage_url': url_for('main.assigned_checklist_manage', record_id=record.id) if record and (current_user.is_admin or record.created_by == current_user.username) else None,
                  'archive_url': url_for('main.assigned_checklist_archive', kind=d.id),
-                 'completed': {'record_id': record.id, 'created_by': record.created_by, 'time': record.created_at.strftime('%H:%M'),
+                 'completed': {'created_by': record.created_by, 'time': record.created_at.strftime('%H:%M'),
                     'answers': json.loads(record.answers), 'temperature': record.temperature} if record else None})
         return jsonify(lists=result, shift_start=start.isoformat(), shift_name=name,
             seconds_remaining=((start+timedelta(hours=8))-now).total_seconds())

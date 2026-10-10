@@ -46,14 +46,9 @@
       const body=document.createElement('div');body.className='card-body';
       const heading=document.createElement('h6');heading.textContent=list.title;
       const summary=document.createElement('div');summary.className='small mb-2';
-      if(list.completed){card.classList.add('assigned-complete');summary.textContent=`${list.completed.time} توسط ${list.completed.created_by}`;}
+      if(list.completed){card.classList.add('assigned-complete');summary.textContent=`ثبت شد · ${list.completed.time} توسط ${list.completed.created_by}`;}
       else {const urgent=remaining>0&&remaining<=600;card.classList.toggle('assigned-urgent',urgent);summary.textContent=urgent?'۱۰ دقیقهٔ پایانی شیفت؛ لطفاً تکمیل کنید.':'بازدید این شیفت هنوز ثبت نشده است.';}
-      const titleRow=document.createElement('div');titleRow.className='d-flex justify-content-between align-items-center gap-2';
-      heading.classList.add('mb-0');titleRow.append(heading);
-      if(list.completed){const badge=document.createElement('span');badge.className='badge bg-success';badge.textContent='ثبت شد';titleRow.append(badge);}
-      body.append(titleRow,summary);
-      if(list.completed && list.completed.record_id){
-      }
+      body.append(heading,summary);
       if(!list.completed){const button=document.createElement('button');button.type='button';button.className='btn btn-primary btn-sm';button.textContent='تکمیل چک‌لیست';button.addEventListener('click',()=>open(list));body.append(button);}
       if(list.completed){
         const controls=document.createElement('div');controls.className='d-flex flex-wrap gap-2 mt-2';

@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}مدیریت چک‌لیست‌های اختصاصی{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">مدیریت چک‌لیست‌های اختصاصی</h1>
+<p class="text-muted">هر چک‌لیست یک‌بار در هر شیفت ثبت می‌شود. فقط افراد انتخاب‌شده آن را می‌بینند؛ چک‌لیست عمومی برای همه باقی می‌ماند.</p>
+<div class="row g-4">{% for config in configs %}<div class="col-lg-6"><div class="card shadow"><div class="card-header">چک‌لیست اختصاصی {{ config.id }}</div><div class="card-body">
+<form method="post"><input type="hidden" name="token" value="{{ assigned_token }}"><input type="hidden" name="kind" value="{{ config.id }}">
+<label class="form-label w-100">عنوان<input class="form-control" name="title" value="{{ config.title }}" maxlength="160" required></label>
+<label class="form-label w-100 mt-2">موارد بازدید — هر مورد در یک خط<textarea class="form-control" name="items" rows="8" required>{{ config.labels }}</textarea></label>
+<div class="form-check my-2"><input class="form-check-input" type="checkbox" id="enabled_{{ config.id }}" name="enabled" {% if config.enabled %}checked{% endif %}><label class="form-check-label" for="enabled_{{ config.id }}">این چک‌لیست فعال باشد</label></div>
+<div class="form-check my-2"><input class="form-check-input" type="checkbox" id="temp_{{ config.id }}" name="temperature_required" {% if config.temperature_required %}checked{% endif %}><label class="form-check-label" for="temp_{{ config.id }}">ورود دمای سرور الزامی باشد</label></div>
+<fieldset class="border rounded p-3 my-3"><legend class="float-none w-auto fs-6 px-2">متن پاسخ‌ها</legend>
+{% for key, title in [('ok','پاسخ انجام شده / تایید'),('unknown','پاسخ انجام نشده / بررسی نشده'),('issue','پاسخ مشکل دارد — توضیح الزامی')] %}<label class="form-label w-100">{{ title }}<input class="form-control" name="answer_{{ key }}" value="{{ config.answer_labels[key] }}" maxlength="60" required></label>{% endfor %}
+</fieldset>
+<fieldset class="border rounded p-3 my-3"><legend class="float-none w-auto fs-6 px-2">دسترسی افراد</legend>{% for user in users %}<div class="form-check"><input class="form-check-input" type="checkbox" name="users" value="{{ user.id }}" id="user_{{ config.id }}_{{ user.id }}" {% if user.id in config.user_ids %}checked{% endif %}><label class="form-check-label" for="user_{{ config.id }}_{{ user.id }}">{{ user.username }}</label></div>{% endfor %}<small class="text-muted">برداشتن تیک هر فرد، دسترسی او را غیرفعال می‌کند.</small></fieldset>
+<button class="btn btn-primary" type="submit">ذخیرهٔ تنظیمات</button></form>
+</div></div></div>{% endfor %}</div>
+<div class="card shadow mt-4"><div class="card-header">متن پاسخ‌های چک‌لیست عمومی</div><div class="card-body"><form method="post"><input type="hidden" name="token" value="{{ assigned_token }}"><input type="hidden" name="kind" value="0"><div class="row">{% for key, title in [('ok','پاسخ تایید'),('unknown','پاسخ انجام نشده / بررسی نشده'),('issue','پاسخ مشکل دارد — توضیح الزامی')] %}<div class="col-md-4"><label class="form-label w-100">{{ title }}<input class="form-control" name="answer_{{ key }}" value="{{ public_labels[key] }}" maxlength="60" required></label></div>{% endfor %}</div><button class="btn btn-primary mt-2">ذخیرهٔ پاسخ‌های عمومی</button></form></div></div>
+{% endblock %}

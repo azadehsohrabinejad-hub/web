@@ -35,13 +35,13 @@ def register_checklist_archive(bp):
         return hashlib.sha256(json.dumps(snapshot(r),sort_keys=True,ensure_ascii=False).encode()).hexdigest()
 
     def can_manage(r):
-        return accessible(r)
+        return current_user.is_admin or r.created_by == current_user.username
 
     def authorized_kinds():
         return [d.id for d in Definition.query.all() if current_user.id in json.loads(d.user_ids)]
 
     def accessible(r):
-        return current_user.is_admin or r.kind in authorized_kinds()
+        return current_user.is_admin or r.created_by == current_user.username or r.kind in authorized_kinds()
 
     def decorate(s):
         s=dict(s)

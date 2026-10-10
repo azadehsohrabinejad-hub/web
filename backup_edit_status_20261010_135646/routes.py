@@ -211,7 +211,7 @@ def admin_shift_checklist(record_id):
     record = db.session.get(ShiftChecklist, record_id)
     if record is None:
         abort(404)
-    if not current_user.is_authenticated:
+    if not (current_user.is_admin or record.created_by == current_user.username):
         abort(403)
     if not secrets.compare_digest(request.form.get('revision', ''), checklist_revision(record)):
         flash('بازدید تغییر کرده است؛ صفحه را تازه‌سازی کنید.', 'danger')
@@ -307,7 +307,7 @@ def shift_checklist_status():
     return jsonify(shift_start=shift_start.isoformat(), shift_name=shift_name,
                    seconds_remaining=max(0, ((shift_start + timedelta(hours=8)) - server_now).total_seconds()),
                    shift_date=jdatetime.date.fromgregorian(date=shift_start.date()).strftime('%Y/%m/%d'),
-                   answer_labels=_assigned_response_labels(0), items=active_checklist_items(), can_manage=bool(record and current_user.is_authenticated),
+                   answer_labels=_assigned_response_labels(0), items=active_checklist_items(), can_manage=bool(record and (current_user.is_admin or record.created_by == current_user.username)),
                    completed=checklist_payload(record) if record else None)
 
 @main_bp.route('/api/shift-checklist', methods=['POST'])

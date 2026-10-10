@@ -83,7 +83,7 @@ def register_checklist_excel_reports(bp):
         from openpyxl.styles import Font,PatternFill,Alignment
         wb=Workbook();summary=wb.active;summary.title='خلاصه ثبت‌ها';details=wb.create_sheet('جزئیات موارد')
         summary.append(['شناسه','چک‌لیست','تاریخ شیفت','شیفت','ثبت‌کننده','زمان ثبت','دمای سرور °C','تایید / انجام شده','مشکل دارد','بررسی نشده','توضیحات'])
-        details.append(['شناسه ثبت','چک‌لیست','تاریخ شیفت','شیفت','ثبت‌کننده','مورد','وضعیت','توضیح مورد','دمای سرور °C','زمان ثبت'])
+        details.append(['شناسه ثبت','چک‌لیست','تاریخ شیفت','شیفت','ثبت‌کننده','مورد','وضعیت','توضیح مورد','دمای سرور °C','زمان ثبت','مشخصات تجهیزات'])
         def safe(value):
             # Force user-entered text to stay text, including Excel formula-like prefixes.
             return "'"+value if isinstance(value,str) and value.lstrip().startswith(('=','+','-','@')) else value
@@ -93,7 +93,7 @@ def register_checklist_excel_reports(bp):
             stamp=r.created_at.strftime('%Y-%m-%d %H:%M:%S');answers=json.loads(r.answers)
             counts={s:sum(a['status']==s for a in answers) for s in LABELS}
             summary.append([safe(v) for v in [r.id,title,date,r.shift_name,r.created_by,stamp,r.temperature,counts['ok'],counts['issue'],counts['unknown'],r.notes]])
-            for a in answers:details.append([safe(v) for v in [r.id,title,date,r.shift_name,r.created_by,a['label'],a.get('status_label',LABELS.get(a['status'],a['status'])),a.get('note',''),r.temperature,stamp]])
+            for a in answers:details.append([safe(v) for v in [r.id,title,date,r.shift_name,r.created_by,a['label'],a.get('status_label',LABELS.get(a['status'],a['status'])),a.get('note',''),r.temperature,stamp,json.dumps(a.get('equipment', {}),ensure_ascii=False) if kind else '']])
         for sheet in wb:
             sheet.sheet_view.rightToLeft=True;sheet.freeze_panes='A2';sheet.auto_filter.ref=sheet.dimensions
             for cell in sheet[1]:cell.font=Font(bold=True,color='FFFFFF');cell.fill=PatternFill('solid',fgColor='243B53')

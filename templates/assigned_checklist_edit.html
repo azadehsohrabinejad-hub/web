@@ -1,5 +1,10 @@
 {% extends 'base.html' %}
-{% block title %}ویرایش چک‌لیست{% endblock %}
+{% block title %}ویرایش چک‌لیست<form id="assigned-reset" method="post" class="card card-body border-warning mt-3" onsubmit="return confirm('بازدید جاری بازنشانی شود؟ نسخه قبلی در سابقه محفوظ می‌ماند.')">
+<input type="hidden" name="token" value="{{ token }}"><input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="action" value="reset">
+<h2 class="h6">بازنشانی بازدید این شیفت</h2><p class="small text-muted">فقط برای شیفت جاری؛ پس از بازنشانی، ثبت مجدد امکان‌پذیر می‌شود.</p>
+<label class="form-label">علت بازنشانی (الزامی)<textarea class="form-control" name="reason" minlength="3" maxlength="500" required></textarea></label>
+<button class="btn btn-outline-danger align-self-start">بازنشانی با ثبت سابقه</button></form>
+{% endblock %}
 {% block content %}
 <h1 class="h4">ویرایش یا حذف {{ record.title }}</h1><p>{{ record.date_label }} | شیفت {{ record.shift_name }} | ثبت‌کننده {{ record.created_by }}</p>
 <form method="post" class="card card-body mb-4"><input type="hidden" name="token" value="{{ token }}"><input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="action" value="edit">

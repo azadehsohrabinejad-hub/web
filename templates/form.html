@@ -150,7 +150,7 @@
                         <!-- ردیف 4 -->
                         <div class="row g-3 mb-3">
                             <div class="col-md-4">
-                                <label class="form-label">ساعت دریافت سیگنال</label>
+                                <label class="form-label">ساعت دریافت</label>
                                 <input type="text" class="form-control time-input" id="signal_time" name="signal_time" placeholder="HH:MM:SS" maxlength="8">
                                 <div id="signal_time_error" class="text-danger mt-1 small"></div>
                             </div>
@@ -318,7 +318,7 @@ function validateTimeSequence() {
 
     if (signalSeconds !== null && startSeconds !== null && signalSeconds > startSeconds) {
         isValid = false;
-        errorMessage = 'خطا: ساعت دریافت سیگنال نباید از ساعت شروع بزرگتر باشد.';
+        errorMessage = 'خطا: ساعت دریافت نباید از ساعت شروع بزرگتر باشد.';
         signalTimeEl.classList.add('is-invalid');
         startTimeEl.classList.add('is-invalid');
     }

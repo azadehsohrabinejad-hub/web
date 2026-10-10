@@ -12,6 +12,11 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/icons-fallback.css') }}">
     <link href="{{ url_for('static', filename='css/persian-datepicker.min.css') }}" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+    /* Consistent left-side close control for all RTL modal dialogs. */
+    .modal-header { position: relative; padding-left: 3.5rem; }
+    .modal-header > .btn-close { position: absolute; left: 1rem; right: auto; margin: 0; }
+    </style>
     {% block head %}{% endblock %}
 </head>
 <body class="d-flex flex-column min-vh-100">
