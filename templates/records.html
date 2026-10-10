@@ -119,7 +119,7 @@
                                     <div class="description-container">
                                         <span class="description-text">{{ r.description[:50] }}{% if r.description|length > 50 %}...{% endif %}</span>
                                         {% if r.description|length > 50 %}
-                                            <button class="btn btn-sm btn-link p-0 ms-1 show-description-btn" data-description="{{ r.description | e }}">بیشتر</button>
+                                            <button type="button" class="btn btn-sm btn-link p-0 ms-1 show-description-btn" data-description="{{ r.description | e }}">بیشتر</button>
                                         {% endif %}
                                     </div>
                                 {% else %}
@@ -254,14 +254,14 @@
 
 <!-- Modal برای توضیحات کامل -->
 <div class="modal fade" id="descriptionModal" tabindex="-1" aria-labelledby="descriptionModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="descriptionModalLabel">توضیحات کامل</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                
+                <div id="fullDescriptionText" dir="auto" style="white-space: pre-wrap; overflow-wrap: anywhere;"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
@@ -358,16 +358,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const tableBody = document.querySelector('#dataTable tbody');
 
     // اضافه کردن یک شنونده رویداد کلیک به والد
-    tableBody.addEventListener('click', function(event) {
+    if (tableBody) tableBody.addEventListener('click', function(event) {
         // بررسی اینکه آیا عنصر کلیک شده یا یکی از والدینش دکمه "بیشتر" است
         const showMoreBtn = event.target.closest('.show-description-btn');
         
         if (showMoreBtn) {
+            event.preventDefault();
             // گرفتن توضیحات از ویژگی data-description
             const description = showMoreBtn.getAttribute('data-description');
             if (description) {
                 document.getElementById('fullDescriptionText').textContent = description;
-                const modal = new bootstrap.Modal(document.getElementById('descriptionModal'));
+                const modalElement = document.getElementById('descriptionModal');
+                document.body.appendChild(modalElement);
+                const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
                 modal.show();
             }
         }
