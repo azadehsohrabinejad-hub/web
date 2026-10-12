@@ -628,39 +628,64 @@ def logout():
     logout_user()
     return redirect(url_for('main.login'))
 
+
+def _dashboard_jalali_bounds(period, args):
+    """Return validated inclusive Jalali YYYY/MM/DD bounds."""
+    import jdatetime
+    from datetime import timedelta
+    today = jdatetime.date.today()
+    digits = str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩', '01234567890123456789')
+
+    def normalized(value):
+        return str(value or '').translate(digits).replace('-', '/').strip()
+
+    def parse_date(value):
+        parts = normalized(value).split('/')
+        if len(parts) != 3 or not all(p.isdigit() for p in parts):
+            raise ValueError('تاریخ شمسی را به صورت ۱۴۰۵/۰۷/۱۸ وارد کنید.')
+        return jdatetime.date(*map(int, parts))
+
+    if period == 'daily':
+        first = last = parse_date(args['date']) if args.get('date') else today
+    elif period == 'monthly':
+        raw = normalized(args.get('month') or f'{today.year:04d}/{today.month:02d}')
+        parts = raw.split('/')
+        if len(parts) != 2 or not all(p.isdigit() for p in parts):
+            raise ValueError('ماه شمسی را به صورت ۱۴۰۵/۰۷ وارد کنید.')
+        year, month = map(int, parts)
+        first = jdatetime.date(year, month, 1)
+        next_month = jdatetime.date(year + 1, 1, 1) if month == 12 else jdatetime.date(year, month + 1, 1)
+        last = next_month - timedelta(days=1)
+    elif period == 'yearly':
+        raw = normalized(args.get('year') or today.year)
+        if len(raw) != 4 or not raw.isdigit():
+            raise ValueError('سال شمسی معتبر وارد کنید.')
+        year = int(raw)
+        first = jdatetime.date(year, 1, 1)
+        last = jdatetime.date(year + 1, 1, 1) - timedelta(days=1)
+    elif period == 'custom':
+        first, last = parse_date(args.get('start_date')), parse_date(args.get('end_date'))
+    else:
+        raise ValueError('نوع بازه زمانی نامعتبر است.')
+    if first > last:
+        raise ValueError('تاریخ شروع نباید بعد از تاریخ پایان باشد.')
+    return first.strftime('%Y/%m/%d'), last.strftime('%Y/%m/%d')
+
 @main_bp.route('/dashboard')
 @login_required
 def dashboard():
-    selected_range = request.args.get('range', 'daily')
-    start_date_str, end_date_str = get_jalali_date_range(selected_range)
-    
-    # ... (بخش کوئری‌های آماری بدون تغییر باقی بماند) ...
-    query = ShiftRecord.query.filter(ShiftRecord.date >= start_date_str, ShiftRecord.date <= end_date_str)
-    total_records = query.count()
-    today_records = ShiftRecord.query.filter_by(date=jdatetime.date.today().strftime("%Y/%m/%d")).count()
-    activity_counts = query.with_entities(ShiftRecord.activity, db.func.count(ShiftRecord.id)).group_by(ShiftRecord.activity).order_by(db.func.count(ShiftRecord.id).desc()).first()
-    most_common_activity = activity_counts[0] if activity_counts else "ندارد"
-    most_common_count = activity_counts[1] if activity_counts else 0
-    network_counts = query.with_entities(ShiftRecord.network_name, db.func.count(ShiftRecord.id)).group_by(ShiftRecord.network_name).order_by(db.func.count(ShiftRecord.id).desc()).first()
-    most_common_network = network_counts[0] if network_counts else "ندارد"
-    most_common_network_count = network_counts[1] if network_counts else 0
-    
-    # === اصلاح فراخوانی توابع نمودار (استفاده از نام پارامترها) ===
-    # اشتباه قبلی: ارسال تاریخ به جای df
-    # اصلاح شده: استفاده از start_date=...
-    
-    activity_chart = create_pie_chart_activity(start_date=start_date_str, end_date=end_date_str)
-    network_chart = create_network_chart(start_date=start_date_str, end_date=end_date_str)
-    timeline_chart = create_timeline_chart(start_date=start_date_str, end_date=end_date_str)
-    audio_outage_chart = create_audio_outage_scatter_chart(start_date=start_date_str, end_date=end_date_str)
-    pgm_chart = create_pgm_chart(start_date=start_date_str, end_date=end_date_str)
-    easycaster_chart = create_easycaster_chart(start_date=start_date_str, end_date=end_date_str)
-    
-    return render_template('dashboard.html', total_records=total_records, today_records=today_records,
-                           most_common_activity=most_common_activity, most_common_count=most_common_count,
-                           most_common_network=most_common_network, most_common_network_count=most_common_network_count,
-                           activity_chart=activity_chart, network_chart=network_chart, timeline_chart=timeline_chart,
-                           audio_outage_chart=audio_outage_chart, pgm_chart=pgm_chart, easycaster_chart=easycaster_chart)
+    selected_range = request.args.get('range', 'monthly')
+    try:
+        start_date_str, end_date_str = _dashboard_jalali_bounds(selected_range, request.args)
+    except (ValueError, TypeError, KeyError, OverflowError) as exc:
+        flash(str(exc), 'warning')
+        return redirect(url_for('main.dashboard', range='monthly'))
+
+    from dashboard_metrics import dashboard_metrics
+    dashboard_extra = dashboard_metrics(start_date_str, end_date_str, current_user)
+    return render_template('dashboard.html', dashboard_extra=dashboard_extra,
+                           selected_range=selected_range,
+                           selected_start=start_date_str, selected_end=end_date_str)
 
 @main_bp.route('/submit', methods=['POST'])
 @login_required

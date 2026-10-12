@@ -8,14 +8,36 @@
   document.body.appendChild(modal);
   const form = document.getElementById('assignedChecklistForm');
   const items = document.getElementById('assignedChecklistItems');
-  const error = document.getElementById('assignedChecklistError');
+  function getError() {
+    let el = document.getElementById('assignedChecklistError');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'assignedChecklistError';
+      el.className = 'alert alert-danger d-none m-3';
+      el.setAttribute('role', 'alert');
+      el.setAttribute('aria-live', 'assertive');
+    }
+    const header = modal.querySelector('.modal-header');
+    if (!header) throw new Error('Modal header missing');
+    if (el.parentElement !== modal.querySelector('.modal-content')) {
+      header.insertAdjacentElement('afterend', el);
+    }
+    return el;
+  }
+  getError();
   const save = document.getElementById('assignedChecklistSave');
   let status = null, selected = null, receivedAt = 0, busy = false;
   const instance = () => bootstrap.Modal.getOrCreateInstance(modal);
-  function warn(message) { error.textContent = message; error.classList.remove('d-none'); }
+  function warn(message) {
+    const el = getError();
+    el.textContent = message;
+    el.classList.remove('d-none');
+    el.style.display = 'block';
+    el.style.fontWeight = 'bold';
+  }
   function open(list) {
     selected = {...list, shift_start:status.shift_start};
-    form.reset(); error.classList.add('d-none'); items.replaceChildren();
+    form.reset(); getError().classList.add('d-none'); items.replaceChildren();
     document.getElementById('assignedChecklistTitle').textContent = `${list.title} · شیفت ${status.shift_name}`;
     document.getElementById('assignedChecklistTemperatureWrap').classList.toggle('d-none', !list.temperature_required);
     document.getElementById('assignedChecklistTemperature').required = list.temperature_required;
@@ -77,10 +99,17 @@
     finally{busy=false;}
   }
   form.addEventListener('submit',async event=>{
-    event.preventDefault();error.classList.add('d-none');if(!selected)return;
+    event.preventDefault();getError().classList.add('d-none');if(!selected)return;
     const answers={};
     for(const item of selected.items){const radio=form.querySelector(`input[name="assigned_${item.id}"]:checked`);const note=items.querySelector(`[data-item-note="${item.id}"]`).value.trim();
-      if(!radio){warn('همهٔ موارد را تعیین وضعیت کنید.');return;}if(radio.value==='issue'&&!note){warn('شرح مشکل را بنویسید.');return;}answers[item.id]={status:radio.value,note};}
+      if(!radio){
+        warn('\u0644\u0637\u0641\u0627\u064b \u0648\u0636\u0639\u06cc\u062a \u062a\u0645\u0627\u0645 \u0645\u0648\u0627\u0631\u062f \u0686\u06a9\u200c\u0644\u06cc\u0633\u062a \u0631\u0627 \u0645\u0634\u062e\u0635 \u06a9\u0646\u06cc\u062f.');
+        const firstInput = form.querySelector(`input[name="assigned_${item.id}"]`);
+        const row = firstInput?.closest('.border');
+        if(row) row.style.borderColor = '#dc3545';
+        getError().classList.remove('d-none');
+        return;
+      }if(radio.value==='issue'&&!note){warn('شرح مشکل را بنویسید.');return;}answers[item.id]={status:radio.value,note};}
     save.disabled=true;
     try{const url=config.saveUrl.replace(/\/0$/,`/${selected.id}`);
       const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:config.token,shift_start:selected.shift_start,version:selected.version,answers,temperature:document.getElementById('assignedChecklistTemperature').value,notes:document.getElementById('assignedChecklistNotes').value})});
