@@ -12,6 +12,11 @@
   const items = document.getElementById('checklistItems');
   const progress = document.getElementById('checklistProgress');
   const error = document.getElementById('checklistError');
+  // Place validation feedback at the top of the visible modal.
+  const modalBody = document.querySelector('#checklistModal .modal-body');
+  if (error && modalBody) {
+    modalBody.insertBefore(error, modalBody.firstChild);
+  }
   const save = document.getElementById('checklistSave');
   const modal = document.getElementById('checklistModal');
   const actions = document.getElementById('checklistActions');
@@ -94,7 +99,30 @@
     });
   }
 
-  function showError(message) { error.textContent = message; error.classList.remove('d-none'); }
+  function showError(message) {
+    let warning = document.getElementById('checklistVisibleWarning');
+    const body = modal.querySelector('.modal-body');
+
+    if (!body) {
+      window.alert(message);
+      return;
+    }
+
+    if (!warning) {
+      warning = document.createElement('div');
+      warning.id = 'checklistVisibleWarning';
+      warning.className = 'alert alert-danger fw-bold';
+      warning.setAttribute('role', 'alert');
+      warning.style.cssText = 'position:sticky;top:0;z-index:10;font-size:16px;';
+      body.prepend(warning);
+    }
+
+    warning.textContent = message;
+    warning.classList.remove('d-none');
+    body.scrollTop = 0;
+    warning.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+
   function updateProgress() {
     progress.textContent = `${items.querySelectorAll('input[type=radio]:checked').length} از ${current.items.length} مورد پاسخ داده شد`;
   }
@@ -165,7 +193,9 @@
     }
   }
   form.addEventListener('submit', async event => {
-    event.preventDefault(); error.classList.add('d-none');
+    event.preventDefault();
+    error.classList.add('d-none');
+    document.getElementById('checklistVisibleWarning')?.classList.add('d-none');
     if (!current || current.completed) return;
     const answers = {};
     for (const item of current.items) {
