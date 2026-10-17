@@ -19,6 +19,14 @@ def _network(value):
         return '__shared__'
     return ALIASES.get(key)
 
+def _networks(value):
+    """Return distinct canonical networks; shared label expands to all networks."""
+    parts = [x.strip() for x in str(value or '').replace('،', ',').split(',') if x.strip()]
+    if any(_network(part) == '__shared__' for part in parts):
+        return list(NETWORKS)
+    return list(dict.fromkeys(n for part in parts if (n := _network(part)) in NETWORKS))
+
+
 def _duration_seconds(value):
     if value is None:
         return None
@@ -49,7 +57,7 @@ def dashboard_metrics(start_date,end_date,user=None):
     daily=defaultdict(Counter); day_network=defaultdict(Counter)
     for raw_network,raw_activity,duration,via_method,record_date in rows:
         day=str(record_date or "")
-        network=_network(raw_network); activity=_activity(raw_activity)
+        networks=_networks(raw_network); activity=_activity(raw_activity)
         method=_key(via_method)
         # Count connection methods only on connection activity records.
         if _key(raw_activity).startswith(_key('ارتباط با')):
@@ -63,23 +71,15 @@ def dashboard_metrics(start_date,end_date,user=None):
                 kind=None
                 if method: other_connection+=1
             if kind:
-                if network=='__shared__':
-                    for n in NETWORKS: connection_networks[n][kind]+=1
-                elif network in NETWORKS:
-                    connection_networks[network][kind]+=1
-                else:
-                    connection_excluded['ارتباط خارج از ۱۹ شبکه']+=1
+                for n in networks: connection_networks[n][kind]+=1
+                if not networks: connection_excluded['ارتباط خارج از ۱۹ شبکه']+=1
         if _key(raw_activity).startswith(_key('ضبط تصویر')): recording+=1
         if activity in REQUESTS:
             daily[day]['requests']+=1
-            if network in NETWORKS: day_network[day][network]+=1
-            elif network=='__shared__':
-                for n in NETWORKS: day_network[day][n]+=1
+            for n in networks: day_network[day][n]+=1
             request_counts[activity]+=1
-            if network=='__shared__':
-                for n in NETWORKS: request_networks[n][activity]+=1
-            elif network in NETWORKS: request_networks[network][activity]+=1
-            else: excluded['درخواست بدون شبکه منتخب']+=1
+            for n in networks: request_networks[n][activity]+=1
+            if not networks: excluded['درخواست بدون شبکه منتخب']+=1
         if 'قطع صدا' in _key(raw_activity) or 'قطعـیصدا' in _key(raw_activity) or 'قطعیصدا' in _key(raw_activity):
             total_outage_count+=1
             daily[day]['outages']+=1
@@ -87,8 +87,10 @@ def dashboard_metrics(start_date,end_date,user=None):
             if sec is None: invalid+=1; continue
             total_outage_seconds+=sec
             daily[day]['outage_seconds']+=sec
-            if network=='__shared__': shared_seconds+=sec; shared_outages+=1
-            elif network in NETWORKS: outage_own[network]+=sec; outage_own_count[network]+=1
+            if _network(raw_network)=='__shared__':
+                shared_seconds+=sec; shared_outages+=1
+            elif networks:
+                for n in networks: outage_own[n]+=sec; outage_own_count[n]+=1
             else: excluded['قطعی خارج از ۱۹ شبکه']+=1
     network_rows=[]
     for n in NETWORKS:

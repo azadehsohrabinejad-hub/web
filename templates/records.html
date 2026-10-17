@@ -167,6 +167,26 @@
                     </li>
                 </ul>
             </nav>
+            {% if records.pages > 1 %}
+            <form method="GET" action="{{ url_for('main.records') }}"
+                  class="d-flex flex-wrap align-items-center justify-content-center gap-2 mt-2 mb-1"
+                  aria-label="رفتن به صفحه دلخواه گزارش‌ها">
+                {% for key, values in request.args.lists() %}
+                    {% if key != 'page' %}
+                        {% for value in values %}
+                        <input type="hidden" name="{{ key }}" value="{{ value }}">
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+                <label for="jump-to-report-page" class="form-label mb-0 small">رفتن به صفحه</label>
+                <input type="number" id="jump-to-report-page" name="page"
+                       class="form-control form-control-sm text-center" style="width: 85px;"
+                       min="1" max="{{ records.pages }}" step="1" required
+                       value="{{ records.page }}" aria-label="شماره صفحه دلخواه">
+                <span class="text-muted small">از {{ records.pages }}</span>
+                <button type="submit" class="btn btn-primary btn-sm">برو</button>
+            </form>
+            {% endif %}
         </div>
     </div>
     <section class="card shadow mb-4" id="shift-inspections">
@@ -388,4 +408,35 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% include '_assigned_checklist_records.html' %}
+<!-- BEGIN safe-30s-auto-refresh -->
+<script>
+(function () {
+  'use strict';
+  const interval = 30000;
+  let lastInteraction = Date.now();
+  let dirty = false;
+  const noteInteraction = () => { lastInteraction = Date.now(); };
+  document.addEventListener('input', (event) => {
+    if (event.target.closest('input, select, textarea, [contenteditable="true"]')) {
+      dirty = true;
+    }
+    noteInteraction();
+  }, true);
+  document.addEventListener('change', (event) => {
+    if (event.target.closest('input, select, textarea')) dirty = true;
+    noteInteraction();
+  }, true);
+  document.addEventListener('keydown', noteInteraction, true);
+  document.addEventListener('pointerdown', noteInteraction, true);
+  document.addEventListener('submit', () => { dirty = true; }, true);
+  window.addEventListener('pageshow', () => { lastInteraction = Date.now(); });
+  setInterval(() => {
+    if (document.visibilityState !== 'visible' || !navigator.onLine || dirty) return;
+    if (Date.now() - lastInteraction < interval) return;
+    if (document.querySelector('input:focus, select:focus, textarea:focus, [contenteditable="true"]:focus, .modal.show, [role="dialog"][aria-modal="true"]')) return;
+    window.location.reload();
+  }, interval);
+})();
+</script>
+<!-- END safe-30s-auto-refresh -->
 {% endblock %}

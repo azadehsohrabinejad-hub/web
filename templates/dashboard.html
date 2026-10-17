@@ -119,4 +119,35 @@ const tooltip=document.getElementById('rd-tooltip');box.addEventListener('pointe
 try{render();}catch(error){console.error('Dashboard chart rendering error',error);}
 })();
 </script>
+<!-- BEGIN safe-30s-auto-refresh -->
+<script>
+(function () {
+  'use strict';
+  const interval = 30000;
+  let lastInteraction = Date.now();
+  let dirty = false;
+  const noteInteraction = () => { lastInteraction = Date.now(); };
+  document.addEventListener('input', (event) => {
+    if (event.target.closest('input, select, textarea, [contenteditable="true"]')) {
+      dirty = true;
+    }
+    noteInteraction();
+  }, true);
+  document.addEventListener('change', (event) => {
+    if (event.target.closest('input, select, textarea')) dirty = true;
+    noteInteraction();
+  }, true);
+  document.addEventListener('keydown', noteInteraction, true);
+  document.addEventListener('pointerdown', noteInteraction, true);
+  document.addEventListener('submit', () => { dirty = true; }, true);
+  window.addEventListener('pageshow', () => { lastInteraction = Date.now(); });
+  setInterval(() => {
+    if (document.visibilityState !== 'visible' || !navigator.onLine || dirty) return;
+    if (Date.now() - lastInteraction < interval) return;
+    if (document.querySelector('input:focus, select:focus, textarea:focus, [contenteditable="true"]:focus, .modal.show, [role="dialog"][aria-modal="true"]')) return;
+    window.location.reload();
+  }, interval);
+})();
+</script>
+<!-- END safe-30s-auto-refresh -->
 {% endblock %}

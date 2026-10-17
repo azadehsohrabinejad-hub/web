@@ -14,6 +14,7 @@ import matplotlib.font_manager as fm
 from matplotlib.font_manager import FontProperties
 from typing import List, Optional, Dict, Any, Tuple
 from models import db, ShiftRecord
+from dashboard_metrics import _networks, _key
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -84,8 +85,6 @@ class ChartGenerator:
                 query = query.filter(ShiftRecord.date >= filters['start_date'])
             if 'end_date' in filters and filters['end_date']:
                 query = query.filter(ShiftRecord.date <= filters['end_date'])
-            if 'network_list' in filters and filters['network_list']:
-                query = query.filter(ShiftRecord.network_name.in_(filters['network_list']))
             if 'activity_list' in filters and filters['activity_list']:
                 query = query.filter(ShiftRecord.activity.in_(filters['activity_list']))
             
@@ -106,7 +105,11 @@ class ChartGenerator:
                 return pd.DataFrame(columns=['id', 'date', 'network_name', 'activity', 'duration', 'via_method'])
 
             data = [{col.name: getattr(row, col.name) for col in row.__table__.columns} for row in records]
-            return pd.DataFrame(data)
+            df = pd.DataFrame(data)
+            if filters.get('network_list'):
+                wanted = set(filters['network_list'])
+                df = df[df['network_name'].apply(lambda v: bool(set(_networks(v)) & wanted))].copy()
+            return df
             
         except Exception as e:
             logging.error(f"Error fetching data: {e}")
@@ -187,6 +190,14 @@ class ChartGenerator:
             ax.set_yticks([])
             return
 
+        # One plotted point per network; original record ID remains available for global totals.
+        df = df.copy()
+        original = df.copy()
+        df['network_name'] = df['network_name'].apply(_networks)
+        df = df.explode('network_name').dropna(subset=['network_name']).copy()
+        if df.empty:
+            ax.text(0.5, 0.5, self._get_persian_text('شبکه معتبر یافت نشد'), ha='center', va='center', fontproperties=self.font_props)
+            return
         df['network_fa'] = df['network_name'].apply(self._get_persian_text)
         df['duration_min'] = df['duration'].apply(self._duration_to_minutes)
         
@@ -209,10 +220,11 @@ class ChartGenerator:
         ax.grid(True, linestyle='--', alpha=0.6)
 
         # جدول
-        total_events = len(df)
-        total_min = df['duration_min'].sum()
-        avg_min = df['duration_min'].mean() if total_events > 0 else 0
-        max_min = df['duration_min'].max() if total_events > 0 else 0
+        total_events = len(original)
+        original_minutes = original['duration'].apply(self._duration_to_minutes)
+        total_min = original_minutes.sum()
+        avg_min = original_minutes.mean() if total_events > 0 else 0
+        max_min = original_minutes.max() if total_events > 0 else 0
 
         cell_text = [[f'{total_events}', f'{total_min:.1f}', f'{avg_min:.1f}', f'{max_min:.1f}']]
         col_labels = [self._get_persian_text(l) for l in ['تعداد', 'مجموع (دقیقه)', 'میانگین', 'بیشینه']]
@@ -266,6 +278,9 @@ class ChartGenerator:
         if network_df.empty:
              if ax: self._plot_generic_chart(ax, network_df, 'bar', title='تعداد بر اساس شبکه')
              return None
+        network_df = network_df.copy()
+        network_df['network_name'] = network_df['network_name'].apply(_networks)
+        network_df = network_df.explode('network_name').dropna(subset=['network_name'])
         network_counts = network_df['network_name'].value_counts().reset_index()
         network_counts.columns = ['network_name', 'count']
         
@@ -316,10 +331,10 @@ def create_audio_outage_scatter_chart(start_date=None, end_date=None, network_li
     return chart_gen.create_scatter_table_chart(title='جزئیات قطعی صدا', ax=ax, start_date=start_date, end_date=end_date, network_list=network_list, activity_list=activity_list, activity_like='قطعی صدا')
 
 def create_pgm_chart(start_date=None, end_date=None, network_list=None, activity_list=None, ax=None):
-    return chart_gen.create_scatter_table_chart(title='ارتباط‌های کابلی (PGM)', ax=ax, start_date=start_date, end_date=end_date, network_list=network_list, activity_list=activity_list, via_method_like='PGM')
+    return chart_gen.create_scatter_table_chart(title='ارتباط‌های کابلی (PGM)', ax=ax, start_date=start_date, end_date=end_date, network_list=network_list, activity_list=activity_list, via_method_like='PGM', activity_like='ارتباط با')
 
 def create_easycaster_chart(start_date=None, end_date=None, network_list=None, activity_list=None, ax=None):
-    return chart_gen.create_scatter_table_chart(title='ارتباط‌های اینترنتی (Easy Caster)', ax=ax, start_date=start_date, end_date=end_date, network_list=network_list, activity_list=activity_list, via_method_like='Easy Caster')
+    return chart_gen.create_scatter_table_chart(title='ارتباط‌های اینترنتی (Easy Caster)', ax=ax, start_date=start_date, end_date=end_date, network_list=network_list, activity_list=activity_list, via_method_like='Easy Caster', activity_like='ارتباط با')
 
 create_pie_chart_activity = create_activity_chart
 def duration_to_seconds(duration_str): return int(chart_gen._duration_to_minutes(duration_str) * 60)

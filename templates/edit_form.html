@@ -44,12 +44,13 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="network_name" class="form-label">نام شبکه</label>
-                        <select class="form-select" id="network_name" name="network_name">
-                            <option value="" disabled>-- انتخاب شبکه --</option>
+                        <select class="form-select" id="network_name" name="network_name" multiple size="5" aria-describedby="network_help">
+                            {% set selected_networks = (record.network_name or '').split(', ') %}
                             {% for network in network_names %}
-                                <option value="{{ network }}" {% if record.network_name == network %}selected{% endif %}>{{ network }}</option>
+                                <option value="{{ network }}" {% if network in selected_networks %}selected{% endif %}>{{ network }}</option>
                             {% endfor %}
                         </select>
+                        <small id="network_help" class="form-text text-muted">برای انتخاب چند شبکه، کلید Ctrl را نگه دارید و روی نام شبکه‌ها کلیک کنید.</small>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="activity" class="form-label">فعالیت</label>
@@ -79,7 +80,7 @@
                 <h5 class="border-bottom pb-2 mb-3"><i class="fas fa-clock"></i> زمان‌بندی</h5>
                 <div class="row">
                     <div class="col-md-3 mb-3">
-                        <label for="signal_time" class="form-label">ساعت دریافت سیگنال</label>
+                        <label for="signal_time" class="form-label">ساعت دریافت</label>
                         <input type="time" class="form-control" id="signal_time" name="signal_time" value="{{ record.signal_time or '' }}">
                     </div>
                     <div class="col-md-3 mb-3">

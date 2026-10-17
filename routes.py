@@ -731,13 +731,26 @@ def submit():
                 'network_name': 'نام شبکه',
                 'start_time': 'ساعت شروع',
                 'end_time': 'ساعت پایان',
-                'signal_time': 'ساعت دریافت سیگنال',
+                'signal_time': 'ساعت دریافت',
                 'receiver': 'تحویل‌گیرنده'
             }
             missing_field_names = [field_names.get(f, f) for f in missing_fields]
             flash(f'لطفاً فیلدهای الزامی را پر کنید: {", ".join(missing_field_names)}', 'danger')
             return redirect(url_for('main.form'))
         
+        # دریافت و اعتبارسنجی انتخاب چند شبکه (بدون تغییر ساختار دیتابیس)
+        selected_networks = list(dict.fromkeys(
+            name.strip() for name in request.form.getlist('network_name') if name.strip()
+        ))
+        valid_networks = {n.name for n in Network.query.all()}
+        if any(name not in valid_networks for name in selected_networks):
+            flash('یک یا چند شبکه انتخاب‌شده معتبر نیست.', 'danger')
+            return redirect(url_for('main.form'))
+        network_value = ', '.join(selected_networks)
+        if len(network_value) > 100:
+            flash('نام شبکه‌های انتخاب‌شده بیش از ظرفیت مجاز است؛ تعداد کمتری انتخاب کنید.', 'danger')
+            return redirect(url_for('main.form'))
+
         # پیدا کردن آخرین رکورد برای شماره ردیف بعدی
         last_record = ShiftRecord.query.order_by(ShiftRecord.row_number.desc()).first()
         next_row_number = (last_record.row_number + 1) if last_record else 1
@@ -749,7 +762,7 @@ def submit():
             date=request.form.get('date'),
             shift=request.form.get('shift'),
             location=request.form.get('location'),
-            network_name=request.form.get('network_name'),
+            network_name=network_value,
             activity=activity,
             deliverer=request.form.get('deliverer'),
             receiver=request.form.get('receiver'),
@@ -787,7 +800,7 @@ def submit():
             'deliverer': 'تحویل‌دهنده',
             'receiver': 'تحویل‌گیرنده',
             'location': 'لوکیشن',
-            'signal_time': 'ساعت دریافت سیگنال',
+            'signal_time': 'ساعت دریافت',
             'start_time': 'شروع',
             'end_time': 'پایان',
             'duration': 'مدت زمان',
@@ -906,6 +919,17 @@ def form():
                            submission_token=submission_token, checklist_token=session['checklist_token'],
                            activity_configs=activity_configs)
 
+def _network_contains(name):
+    """Match an individual network within legacy or comma-separated values."""
+    from sqlalchemy import or_
+    escaped = name.replace('%', r'\%').replace('_', r'\_')
+    return or_(
+        ShiftRecord.network_name == name,
+        ShiftRecord.network_name.like(escaped + ', %', escape=chr(92)),
+        ShiftRecord.network_name.like('%, ' + escaped + ', %', escape=chr(92)),
+        ShiftRecord.network_name.like('%, ' + escaped, escape=chr(92)),
+    )
+
 @main_bp.route('/records')
 @login_required
 def records():
@@ -920,7 +944,7 @@ def records():
     query = ShiftRecord.query
     if start_date: query = query.filter(ShiftRecord.date >= start_date)
     if end_date: query = query.filter(ShiftRecord.date <= end_date)
-    if network: query = query.filter(ShiftRecord.network_name == network)
+    if network: query = query.filter(_network_contains(network))
     if activity: query = query.filter(ShiftRecord.activity == activity)
     
     if sort_by == 'date':
@@ -1049,7 +1073,18 @@ def edit_record(record_id):
         record.date = request.form.get('date')
         record.shift = request.form.get('shift')
         record.location = request.form.get('location')  # اضافه شد
-        record.network_name = request.form.get('network_name')
+        selected_networks = list(dict.fromkeys(
+            name.strip() for name in request.form.getlist('network_name') if name.strip()
+        ))
+        valid_networks = {n.name for n in Network.query.all()}
+        if any(name not in valid_networks for name in selected_networks):
+            flash('یک یا چند شبکه انتخاب‌شده معتبر نیست.', 'danger')
+            return redirect(url_for('main.edit_record', record_id=record.id))
+        network_value = ', '.join(selected_networks)
+        if len(network_value) > 100:
+            flash('نام شبکه‌های انتخاب‌شده بیش از ظرفیت مجاز است؛ تعداد کمتری انتخاب کنید.', 'danger')
+            return redirect(url_for('main.edit_record', record_id=record.id))
+        record.network_name = network_value
         record.activity = request.form.get('activity')
         record.deliverer = request.form.get('deliverer')
         record.receiver = request.form.get('receiver')
@@ -1265,7 +1300,7 @@ def export_excel():
         if end_date: 
             query = query.filter(ShiftRecord.date <= end_date)
         if network_list: 
-            query = query.filter(ShiftRecord.network_name.in_(network_list))
+            query = query.filter(db.or_(*[_network_contains(n) for n in network_list]))
         if activity_list: 
             query = query.filter(ShiftRecord.activity.in_(activity_list))
         
@@ -1275,7 +1310,7 @@ def export_excel():
         data = [{
             'ردیف': r.row_number, 'تاریخ': r.date, 'شیفت': r.shift, 'لوکیشن': r.location,
             'نام شبکه': r.network_name, 'فعالیت': r.activity, 'تحویل‌دهنده': r.deliverer,
-            'تحویل‌گیرنده در نودال شهدا': r.receiver, 'ساعت دریافت سیگنال': r.signal_time,
+            'تحویل‌گیرنده در نودال شهدا': r.receiver, 'ساعت دریافت': r.signal_time,
             'ساعت شروع': r.start_time, 'ساعت پایان': r.end_time, 'مدت زمان': r.duration,
             'از طریق': r.via_method, 'خط ارسالی': r.transmission_line, 'پرسنل شیفت': r.shift_staff,
             'توضیحات': r.description, 'کامنت': r.comments, 'پاسخ ادمین': r.admin_reply, 'کاربر ثبت‌کننده': r.created_by
@@ -1640,7 +1675,7 @@ def api_filter_reports():
         if end_date: 
             query = query.filter(ShiftRecord.date <= end_date)
         if network_list: 
-            query = query.filter(ShiftRecord.network_name.in_(network_list))
+            query = query.filter(db.or_(*[_network_contains(n) for n in network_list]))
         if activity_list: 
             query = query.filter(ShiftRecord.activity.in_(activity_list))
         
@@ -1758,7 +1793,7 @@ def send_daily_summary_to_bale():
         data = [{
             'ردیف': r.row_number, 'تاریخ': r.date, 'شیفت': r.shift, 'لوکیشن': r.location or '-',
             'نام شبکه': r.network_name or '-', 'فعالیت': r.activity or '-', 'تحویل‌دهنده': r.deliverer or '-',
-            'تحویل‌گیرنده در نودال شهدا': r.receiver or '-', 'ساعت دریافت سیگنال': r.signal_time or '-',
+            'تحویل‌گیرنده در نودال شهدا': r.receiver or '-', 'ساعت دریافت': r.signal_time or '-',
             'ساعت شروع': r.start_time or '-', 'ساعت پایان': r.end_time or '-', 'مدت زمان': r.duration or '-',
             'از طریق': r.via_method or '-', 'خط ارسالی': r.transmission_line or '-', 'پرسنل شیفت': r.shift_staff or '-',
             'توضیحات': r.description or '-', 'کامنت': r.comments or '-', 'پاسخ ادمین': r.admin_reply or '-',
@@ -1807,7 +1842,7 @@ def send_weekly_summary_to_bale():
         data = [{
             'ردیف': r.row_number, 'تاریخ': r.date, 'شیفت': r.shift, 'لوکیشن': r.location or '-',
             'نام شبکه': r.network_name or '-', 'فعالیت': r.activity or '-', 'تحویل‌دهنده': r.deliverer or '-',
-            'تحویل‌گیرنده در نودال شهدا': r.receiver or '-', 'ساعت دریافت سیگنال': r.signal_time or '-',
+            'تحویل‌گیرنده در نودال شهدا': r.receiver or '-', 'ساعت دریافت': r.signal_time or '-',
             'ساعت شروع': r.start_time or '-', 'ساعت پایان': r.end_time or '-', 'مدت زمان': r.duration or '-',
             'از طریق': r.via_method or '-', 'خط ارسالی': r.transmission_line or '-', 'پرسنل شیفت': r.shift_staff or '-',
             'توضیحات': r.description or '-', 'کامنت': r.comments or '-', 'پاسخ ادمین': r.admin_reply or '-',

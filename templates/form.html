@@ -99,12 +99,29 @@
                         <div class="row g-3 mb-3">
                             <div class="col-md-4">
                                 <label class="form-label">نام شبکه</label>
-                                <select class="form-select" id="network_name" name="network_name">
-                                    <option value="" selected disabled>انتخاب کنید...</option>
+                                <select class="d-none" id="network_name" name="network_name" multiple aria-describedby="network_help network_error">
                                     {% for network in network_names %}
                                     <option value="{{ network }}">{{ network }}</option>
                                     {% endfor %}
                                 </select>
+                                <div class="dropdown" id="network_dropdown">
+                                    <button class="form-select text-end" type="button" id="network_toggle"
+                                            data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                                            aria-expanded="false" aria-controls="network_choices">
+                                        <span id="network_summary">انتخاب کنید...</span>
+                                    </button>
+                                    <div class="dropdown-menu w-100 p-2 shadow" id="network_choices"
+                                         style="max-height: 240px; overflow-y: auto; text-align: right;">
+                                        {% for network in network_names %}
+                                        <label class="dropdown-item d-flex align-items-center gap-2 rounded" style="cursor: pointer; white-space: normal;">
+                                            <input class="form-check-input m-0 network-choice" type="checkbox" value="{{ network }}">
+                                            <span>{{ network }}</span>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <small id="network_help" class="text-muted d-block mt-1">برای انتخاب چند شبکه، روی کادر کلیک کنید و شبکه‌ها را علامت بزنید (یا با Ctrl انتخاب کنید).</small>
+                                <small id="network_error" class="text-danger d-block mt-1"></small>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">لوکیشن</label>
@@ -460,6 +477,22 @@ function showResourceDetails(resourceName, resourceInfo) {
     modalInstance.show();
 }
 
+function syncNetworkDropdown() {
+    const select = document.getElementById('network_name');
+    const selected = new Set(Array.from(select.selectedOptions).map(o => o.value));
+    document.querySelectorAll('.network-choice').forEach(box => { box.checked = selected.has(box.value); });
+    const summary = document.getElementById('network_summary');
+    summary.textContent = selected.size ? Array.from(selected).join('، ') : 'انتخاب کنید...';
+    summary.parentElement.title = summary.textContent;
+}
+
+function setSelectedNetworks(value) {
+    const select = document.getElementById('network_name');
+    const selected = new Set((value || '').split(',').map(name => name.trim()).filter(Boolean));
+    Array.from(select.options).forEach(option => { option.selected = selected.has(option.value); });
+    syncNetworkDropdown();
+}
+
 function copyLastReport() {
     fetch("{{ url_for('main.api_last_record') }}")
         .then(response => response.json())
@@ -469,7 +502,7 @@ function copyLastReport() {
             document.getElementById('shift').value = data.shift || '';
             document.getElementById('activity').value = data.activity || '';
             document.getElementById('location').value = data.location || '';
-            document.getElementById('network_name').value = data.network_name || '';
+            setSelectedNetworks(data.network_name || '');
             document.getElementById('deliverer').value = data.deliverer || '';
             document.getElementById('receiver').value = data.receiver || '';
             document.getElementById('signal_time').value = data.signal_time || '';
@@ -501,7 +534,7 @@ function copyLastMonitorReport() {
             document.getElementById('shift').value = data.shift || '';
             document.getElementById('activity').value = data.activity || '';
             document.getElementById('location').value = data.location || '';
-            document.getElementById('network_name').value = data.network_name || '';
+            setSelectedNetworks(data.network_name || '');
             document.getElementById('deliverer').value = data.deliverer || '';
             document.getElementById('receiver').value = data.receiver || '';
             document.getElementById('signal_time').value = data.signal_time || '';
@@ -563,6 +596,16 @@ function updateResourceStatus() {
 
 // --- رویداد اصلی صفحه ---
 document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.network-choice').forEach(box => {
+        box.addEventListener('change', () => {
+            const select = document.getElementById('network_name');
+            Array.from(select.options).forEach(option => {
+                if (option.value === box.value) option.selected = box.checked;
+            });
+            syncNetworkDropdown();
+        });
+    });
+    syncNetworkDropdown();
     const form = document.getElementById('shiftForm');
     const submitButton = document.getElementById('submitButton');
     const submitButtonReady = document.getElementById('submitButtonReady');
@@ -590,6 +633,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        document.getElementById('network_toggle').classList.remove('is-invalid');
         const invalidFields = form.querySelectorAll('.is-invalid');
         invalidFields.forEach(field => field.classList.remove('is-invalid'));
 
@@ -609,12 +653,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const config = activityConfigs[activity] || {enabled: [], required: []};
         config.required.forEach(fieldName => {
-            if (fields[fieldName] && !fields[fieldName].value) {
-                fields[fieldName].classList.add('is-invalid');
+            if (fields[fieldName] && (fieldName === 'network_name'
+                ? fields[fieldName].selectedOptions.length === 0
+                : !fields[fieldName].value)) {
+                (fieldName === 'network_name' ? document.getElementById('network_toggle') : fields[fieldName]).classList.add('is-invalid');
                 isValid = false;
             }
         });
         
+        const networkSelect = fields.network_name;
+        const networkValue = Array.from(networkSelect.selectedOptions).map(option => option.value).join(', ');
+        const networkError = document.getElementById('network_error');
+        networkError.textContent = '';
+        if (!networkSelect.disabled && networkValue.length > 100) {
+            document.getElementById('network_toggle').classList.add('is-invalid');
+            networkError.textContent = 'تعداد شبکه‌های انتخاب‌شده زیاد است؛ لطفاً تعداد کمتری انتخاب کنید.';
+            isValid = false;
+        }
         if (!validateTimeSequence()) isValid = false;
         
         if (isValid) {
@@ -649,6 +704,8 @@ document.addEventListener('DOMContentLoaded', function() {
         config.enabled.forEach(fieldName => {
             if (fields[fieldName]) fields[fieldName].disabled = false;
         });
+        const networkButton = document.getElementById('network_toggle');
+        networkButton.disabled = fields.network_name.disabled;
     }
     
     if(activitySelect) {
